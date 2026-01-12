@@ -5,20 +5,29 @@
 
 namespace clue::concepts {
 
-  template <typename T>
-  concept queue = alpaka::isQueue<T>;
 
-  template <typename T>
-  concept device = alpaka::isDevice<T>;
 
-  template <typename T>
-  concept accelerator = alpaka::isAccelerator<T>;
+  template<alpaka::onHost::concepts::DeviceSpec T>
+  consteval bool is_cpu_device_spec_v(const T&) {
+    return std::is_same_v<T,alpaka::deviceKind::IntelGpu>||std::is_same_v<T,alpaka::deviceKind::AmdGpu>||std::is_same_v<T,alpaka::deviceKind::Cpu>;
+  }
+  template<alpaka::onHost::concepts::Device T>
+  concept CpuDevice=is_cpu_device_spec_v(std::declval<T const &>().getDeviceKind());
+  template<
+    alpaka::concepts::Api Api,
+    alpaka::concepts::DeviceKind DevKind,
+    alpaka::concepts::QueueKind QKind>
+  constexpr bool is_queue(alpaka::onHost::Queue<alpaka::onHost::Device<Api, DevKind>, QKind> const&) {
+    return true;
+  }
 
-  template <typename T>
-  concept platform = alpaka::isPlatform<T>;
+  template <class T>
+  constexpr bool is_queue(T const&) { return false; }
 
+  template <class T>
+  concept Queue = is_queue(std::declval<T const&>());
   template <typename T>
-  concept pointer = std::is_pointer_v<T>;
+  concept Pointer = std::is_pointer_v<T>;
 
   template <typename T>
   concept Numeric = requires {

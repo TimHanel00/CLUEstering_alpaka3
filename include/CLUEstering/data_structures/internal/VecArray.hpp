@@ -46,12 +46,12 @@ namespace clue {
     // thread-safe version of the vector, when used in a CUDA kernel
     template <typename T_Acc>
     ALPAKA_FN_ACC int push_back(const T_Acc& acc, const T& element) {
-      auto previousSize = atomicAdd(acc, &m_size, 1ul, alpaka::hierarchy::Blocks{});
+      auto previousSize = alpaka::onAcc::atomicAdd(acc, &m_size, 1ul,alpaka::onAcc::scope::block);
       if (previousSize < maxSize) {
         m_data[previousSize] = element;
         return previousSize;
       } else {
-        atomicSub(acc, &m_size, 1ul, alpaka::hierarchy::Blocks{});
+        alpaka::onAcc::atomicSub(acc, &m_size, 1ul, alpaka::onAcc::scope::block);
         assert(("Too few elemets reserved"));
         return -1;
       }
@@ -59,12 +59,12 @@ namespace clue {
 
     template <typename T_Acc, class... Ts>
     ALPAKA_FN_ACC int emplace_back(const T_Acc& acc, Ts&&... args) {
-      auto previousSize = atomicAdd(acc, &m_size, 1ul, alpaka::hierarchy::Blocks{});
+      auto previousSize = alpaka::onAcc::atomicAdd(acc, &m_size, 1ul, alpaka::onAcc::scope::block);
       if (previousSize < maxSize) {
         (new (&m_data[previousSize]) T(std::forward<Ts>(args)...));
         return previousSize;
       } else {
-        atomicSub(acc, &m_size, 1ul, alpaka::hierarchy::Blocks{});
+        alpaka::onAcc::atomicSub(acc, &m_size, 1ul, alpaka::onAcc::scope::block);
         return -1;
       }
     }

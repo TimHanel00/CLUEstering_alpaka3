@@ -11,7 +11,7 @@
 
 namespace clue {
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   class AssociationMap;
 
   /// @brief A view into an association map data structure that can be passed to kernels.
@@ -33,7 +33,7 @@ namespace clue {
     AssociationMapView(int32_t* indexes, int32_t* offsets, std::size_t nvalues, std::size_t nkeys)
         : m_indexes(indexes), m_offsets(offsets), m_extents{nvalues, nkeys} {}
 
-    template <concepts::device TDev>
+    template <alpaka::onHost::concepts::Device TDev>
     friend class AssociationMap;
 
   public:

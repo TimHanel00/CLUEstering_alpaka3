@@ -13,7 +13,6 @@
 #include "CLUEstering/internal/math/math.hpp"
 
 #include <array>
-#include <alpaka/core/Common.hpp>
 #include <cstdint>
 
 namespace clue::detail {
@@ -281,7 +280,7 @@ namespace clue::detail {
   using WorkDiv = clue::WorkDiv<clue::Dim1D>;
 
   template <concepts::accelerator TAcc,
-            concepts::queue TQueue,
+            concepts::Queue TQueue,
             std::size_t Ndim,
             concepts::convolutional_kernel KernelType,
             concepts::distance_metric<Ndim> DistanceMetric>
@@ -305,7 +304,7 @@ namespace clue::detail {
   }
 
   template <concepts::accelerator TAcc,
-            concepts::queue TQueue,
+            concepts::Queue TQueue,
             std::size_t Ndim,
             concepts::distance_metric<Ndim> DistanceMetric>
   inline void computeNearestHighers(TQueue& queue,
@@ -332,7 +331,7 @@ namespace clue::detail {
   }
 
   template <concepts::accelerator TAcc,
-            concepts::queue TQueue,
+            concepts::Queue TQueue,
             std::size_t Ndim,
             concepts::distance_metric<Ndim> DistanceMetric>
   inline void findClusterSeeds(TQueue& queue,
@@ -354,7 +353,7 @@ namespace clue::detail {
                        size);
   }
 
-  template <concepts::accelerator TAcc, concepts::queue TQueue, std::size_t Ndim>
+  template <concepts::accelerator TAcc, concepts::Queue TQueue, std::size_t Ndim>
   inline void assignPointsToClusters(TQueue& queue,
                                      std::size_t block_size,
                                      clue::internal::SeedArray<>& seeds,

@@ -7,7 +7,6 @@
 #include <utility>
 
 namespace clue::meta {
-
   template <std::size_t N,
             typename F,
             typename Return = decltype(std::declval<F>().template operator()<0>())>

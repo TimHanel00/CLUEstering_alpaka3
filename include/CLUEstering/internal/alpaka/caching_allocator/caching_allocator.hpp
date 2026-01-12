@@ -18,13 +18,15 @@
 
 #include "CLUEstering/internal/alpaka/devices.hpp"
 
+#include <CLUEstering/internal/alpaka/config.hpp>
+
 // Inspired by cub::CachingDeviceAllocator
 
 namespace clue {
 
   namespace detail {
 
-    inline constexpr unsigned int power(unsigned int base, unsigned int exponent) {
+    constexpr unsigned int power(unsigned int base, unsigned int exponent) {
       unsigned int power = 1;
       while (exponent > 0) {
         if (exponent & 1) {
@@ -85,14 +87,15 @@ namespace clue {
   template <typename TDevice, typename TQueue>
   class CachingAllocator {
   public:
+
     using Device = TDevice;              // the "memory device", where the memory will be allocated
     using Queue = TQueue;                // the queue used to submit the memory operations
-    using Event = alpaka::Event<Queue>;  // the events used to synchronise the operations
-    using Buffer = alpaka::Buf<Device, std::byte, alpaka::DimInt<1u>, size_t>;
+    using Event = alpaka::onHost::Event<TDevice>; // the events used to synchronise the operations
+    using Buffer = alpaka::onHost::SharedBuffer<ALPAKA_TYPEOF(alpaka::getApi(std::declval<TQueue>())), std::byte, alpaka_common::Vec1D>;
 
     // The "memory device" type can either be the same as the "synchronisation device" type, or be the host CPU.
     static_assert(std::is_same_v<Device, alpaka::Dev<Queue>> or
-                      std::is_same_v<Device, alpaka::DevCpu>,
+                      std::is_same_v<Device, alpaka::deviceKind::Cpu>,
                   "The \"memory device\" type can either be the same as the "
                   "\"synchronisation device\" "
                   "type, or be the "
@@ -195,7 +198,7 @@ namespace clue {
 
       bool recache = (cachedBytes_.free + block.bytes <= maxCachedBytes_);
       if (recache) {
-        alpaka::enqueue(*(block.queue), *(block.event));
+        block.queue->enqueue(*(block.event));
         cachedBytes_.free += block.bytes;
         // after the call to insert(), cachedBlocks_ shares ownership of the buffer
         // TODO use std::move ?
@@ -203,7 +206,7 @@ namespace clue {
 
         if (debug_) {
           std::ostringstream out;
-          out << "\t" << deviceType_ << " " << alpaka::getName(device_) << " returned "
+          out << "\t" << deviceType_ << " " << alpaka::onHost::demangledName(device_) << " returned "
               << block.bytes << " bytes at " << ptr << " from associated queue "
               << block.queue->m_spQueueImpl.get() << " , event " << block.event->m_spEventImpl.get()
               << " .\n\t\t " << cachedBlocks_.size() << " available blocks cached ("
@@ -215,7 +218,7 @@ namespace clue {
         // if the buffer is not recached, it is automatically freed when block goes out of scope
         if (debug_) {
           std::ostringstream out;
-          out << "\t" << deviceType_ << " " << alpaka::getName(device_) << " freed " << block.bytes
+          out << "\t" << deviceType_ << " " << alpaka::onHost::demangledName(device_) << " freed " << block.bytes
               << " bytes at " << ptr << " from associated queue "
               << block.queue->m_spQueueImpl.get() << ", event " << block.event->m_spEventImpl.get()
               << " .\n\t\t " << cachedBlocks_.size() << " available blocks cached ("
@@ -236,7 +239,7 @@ namespace clue {
       unsigned int bin = 0;
 
       // the "synchronisation device" for this block
-      auto device() { return alpaka::getDev(*queue); }
+      auto device() { return queue->getDevice(); }
     };
 
   private:
@@ -324,14 +327,13 @@ namespace clue {
     }
 
     Buffer allocateBuffer(size_t bytes, Queue const& queue) {
-      if constexpr (std::is_same_v<Device, alpaka::Dev<Queue>>) {
+      if constexpr (std::is_same_v<Device, ALPAKA_TYPEOF(queue.getDevice())>) {
         // allocate device memory
-        return alpaka::allocBuf<std::byte, size_t>(device_, bytes);
-      } else if constexpr (std::is_same_v<Device, alpaka::DevCpu>) {
+        return alpaka::onHost::alloc<std::byte>(queue, bytes);
+      } else if constexpr (std::is_same_v<ALPAKA_TYPEOF(queue.getDevice().getDeviceKind()),alpaka::deviceKind::Cpu>) {
         // allocate pinned host memory accessible by the queue's platform
-        using TPlatform = alpaka::Platform<alpaka::Dev<Queue>>;
-        return alpaka::allocMappedBuf<std::byte, size_t>(
-            device_, ::clue::platform<TPlatform>(), bytes);
+        alpaka::onHost::allocUnified<>()
+        return alpaka::onHost::allocUnified<>()<std::byte>(queue,bytes);
       } else {
         // unsupported combination
         static_assert(

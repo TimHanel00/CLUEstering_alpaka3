@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "CLUEstering/core/detail/defines.hpp"
 #include <alpaka/alpaka.hpp>
 #include <concepts>
 
@@ -88,9 +87,9 @@ namespace clue {
   namespace concepts {
 
     /// @brief Concept describing a convolutional kernel
-    template <typename TKernel>
+    template <typename TAcc,typename TKernel>
     concept convolutional_kernel = requires(
-        TKernel&& kernel, const internal::Acc& acc, float distance, int point_i, int point_j) {
+        TAcc const& acc,TKernel&& kernel, float distance, int point_i, int point_j) {
       { kernel(acc, distance, point_i, point_j) } -> std::same_as<float>;
     };
 

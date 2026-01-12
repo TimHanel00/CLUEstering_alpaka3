@@ -7,23 +7,23 @@
 namespace clue {
 
   class AssociationMapView;
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   class AssociationMap;
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   class Followers {
   public:
     Followers(int32_t npoints, const TDev& dev) : m_assoc(npoints, npoints, dev) {}
-    template <concepts::queue TQueue>
+    template <concepts::Queue TQueue>
     Followers(int32_t npoints, TQueue& queue) : m_assoc(npoints, npoints, queue) {}
 
-    template <concepts::queue TQueue>
+    template <concepts::Queue TQueue>
     ALPAKA_FN_HOST void initialize(int32_t npoints, TQueue& queue) {
       m_assoc.initialize(npoints, npoints, queue);
     }
     ALPAKA_FN_HOST void reset(int32_t npoints) { m_assoc.reset(npoints, npoints); }
 
-    template <concepts::accelerator TAcc, concepts::queue TQueue, std::size_t Ndim>
+    template <concepts::accelerator TAcc, concepts::Queue TQueue, std::size_t Ndim>
     ALPAKA_FN_HOST void fill(TQueue& queue, const PointsDevice<Ndim, TDev>& d_points) {
       m_assoc.template fill<TAcc>(d_points.size(), d_points.nearestHigher(), queue);
     }

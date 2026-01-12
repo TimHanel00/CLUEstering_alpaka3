@@ -7,30 +7,10 @@ namespace alpaka_common {
 
   // common types and dimensions
   using Idx = uint32_t;
-  using Extent = uint32_t;
-  using Offsets = Extent;
-
-  using Dim0D = alpaka::DimInt<0u>;
-  using Dim1D = alpaka::DimInt<1u>;
-  using Dim2D = alpaka::DimInt<2u>;
-  using Dim3D = alpaka::DimInt<3u>;
-
-  template <typename TDim>
-  using Vec = alpaka::Vec<TDim, Idx>;
-  using Vec1D = Vec<Dim1D>;
-  using Vec2D = Vec<Dim2D>;
-  using Vec3D = Vec<Dim3D>;
-  using Scalar = Vec<Dim0D>;
-
-  template <typename TDim>
-  using WorkDiv = alpaka::WorkDivMembers<TDim, Idx>;
-  using WorkDiv1D = WorkDiv<Dim1D>;
-  using WorkDiv2D = WorkDiv<Dim2D>;
-  using WorkDiv3D = WorkDiv<Dim3D>;
-
-  // host types
-  using DevHost = alpaka::DevCpu;
-  using PlatformHost = alpaka::PlatformCpu;
+  using Vec1D = alpaka::Vec<Idx,1u>;
+  using Vec2D = alpaka::Vec<Idx,2u>;
+  using Vec3D = alpaka::Vec<Idx,3u>;
+  using Scalar = alpaka::Vec<Idx,4u>;
 
 }  // namespace alpaka_common
 
@@ -52,7 +32,7 @@ namespace alpaka_cuda_async {
 #define ALPAKA_BACKEND alpaka_cuda_async
 }  // namespace alpaka_cuda_async
 
-#endif  // ALPAKA_ACC_GPU_CUDA_ASYNC_BACKEND
+#endif  // ALPAKA_ACC_GPU_CUDA_ENABLED
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
 namespace alpaka_rocm_async {

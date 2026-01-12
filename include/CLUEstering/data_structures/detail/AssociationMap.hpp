@@ -22,7 +22,7 @@ namespace clue {
                                     size_t size,
                                     int32_t* associations,
                                     TFunc func) const {
-        for (auto i : alpaka::uniformElements(acc, size)) {
+        for (auto i : alpaka::onAcc::makeIdxMap(acc,alpaka::onAcc::worker::threadsInGrid,alpaka::IdxRange{size})) {
           associations[i] = func(i);
         }
       }
@@ -34,9 +34,11 @@ namespace clue {
                                     const int32_t* associations,
                                     int32_t* bin_sizes,
                                     size_t size) const {
-        for (auto i : alpaka::uniformElements(acc, size)) {
-          if (associations[i] >= 0)
-            alpaka::atomicAdd(acc, &bin_sizes[associations[i]], 1);
+        for (auto i : alpaka::onAcc::makeIdxMap(acc,alpaka::onAcc::worker::threadsInGrid,alpaka::IdxRange{size})) {
+          if (associations[i]>=0) {
+            alpaka::onAcc::atomicAdd(acc, &bin_sizes[associations[i]], 1);
+          }
+
         }
       }
     };
@@ -48,19 +50,17 @@ namespace clue {
                                     const int32_t* bin_buffer,
                                     int32_t* temp_offsets,
                                     size_t size) const {
-        for (auto i : alpaka::uniformElements(acc, size)) {
+        for (auto i : alpaka::onAcc::makeIdxMap(acc,alpaka::onAcc::worker::threadsInGrid,alpaka::IdxRange{size})) {
           const auto binId = bin_buffer[i];
           if (binId >= 0) {
-            auto prev = alpaka::atomicAdd(acc, &temp_offsets[binId], 1);
+            auto prev = alpaka::onAcc::atomicAdd(acc, &temp_offsets[binId], 1);
             indexes[prev] = i;
-          }
-        }
       }
     };
 
   }  // namespace detail
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   inline AssociationMap<TDev>::AssociationMap(size_type nelements, size_type nbins)
     requires std::same_as<TDev, alpaka::DevCpu>
       : m_indexes{make_host_buffer<mapped_type[]>(nelements)},
@@ -78,7 +78,7 @@ namespace clue {
     std::memset(m_offsets.data(), 0, (nbins) * sizeof(key_type));
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   inline AssociationMap<TDev>::AssociationMap(size_type nelements, size_type nbins, const TDev& dev)
       : m_indexes{make_device_buffer<mapped_type[]>(dev, nelements)},
         m_offsets{make_device_buffer<key_type[]>(dev, nbins + 1)},
@@ -93,8 +93,8 @@ namespace clue {
     m_view.m_extents = {nbins, nelements};
   }
 
-  template <concepts::device TDev>
-  template <concepts::queue TQueue>
+  template <alpaka::onHost::concepts::Device TDev>
+  template <concepts::Queue TQueue>
   inline AssociationMap<TDev>::AssociationMap(size_type nelements, size_type nbins, TQueue& queue)
       : m_indexes{make_device_buffer<mapped_type[]>(queue, nelements)},
         m_offsets{make_device_buffer<key_type[]>(queue, nbins + 1)},
@@ -109,43 +109,43 @@ namespace clue {
     m_view.m_extents = {nbins, nelements};
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   inline auto AssociationMap<TDev>::extents() const {
     return m_extents;
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   ALPAKA_FN_HOST inline const auto& AssociationMap<TDev>::indexes() const {
     return m_indexes;
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::iterator AssociationMap<TDev>::begin() {
     return iterator{m_indexes.data()};
   }
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::const_iterator AssociationMap<TDev>::begin() const {
     return const_iterator{m_indexes.data()};
   }
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::const_iterator AssociationMap<TDev>::cbegin() const {
     return const_iterator{m_indexes.data()};
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::iterator AssociationMap<TDev>::end() {
     return iterator{m_indexes.data() + m_offsets[m_extents.keys]};
   }
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::const_iterator AssociationMap<TDev>::end() const {
     return const_iterator{m_indexes.data() + m_offsets[m_extents.keys]};
   }
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::const_iterator AssociationMap<TDev>::cend() const {
     return const_iterator{m_indexes.data() + m_offsets[m_extents.keys]};
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::size_type AssociationMap<TDev>::count(key_type key) const {
     if (key < 0 || key >= static_cast<key_type>(m_extents.keys)) {
       throw std::out_of_range("Key out of range in call to AssociationMap::count.");
@@ -153,7 +153,7 @@ namespace clue {
     return m_offsets[key + 1] - m_offsets[key];
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   bool AssociationMap<TDev>::contains(key_type key) const {
     if (key < 0 || key >= static_cast<key_type>(m_extents.keys)) {
       throw std::out_of_range("Key out of range in call to AssociationMap::contains.");
@@ -161,14 +161,14 @@ namespace clue {
     return m_offsets[key + 1] > m_offsets[key];
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::iterator AssociationMap<TDev>::lower_bound(key_type key) {
     if (key < 0 || key >= static_cast<key_type>(m_extents.keys)) {
       throw std::out_of_range("Key out of range in call to AssociationMap::lower_bound.");
     }
     return iterator{m_indexes.data() + m_offsets[key]};
   }
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::const_iterator AssociationMap<TDev>::lower_bound(key_type key) const {
     if (key < 0 || key >= static_cast<key_type>(m_extents.keys)) {
       throw std::out_of_range("Key out of range in call to AssociationMap::lower_bound.");
@@ -176,14 +176,14 @@ namespace clue {
     return const_iterator{m_indexes.data() + m_offsets[key]};
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::iterator AssociationMap<TDev>::upper_bound(key_type key) {
     if (key < 0 || key >= static_cast<key_type>(m_extents.keys)) {
       throw std::out_of_range("Key out of range in call to AssociationMap::upper_bound.");
     }
     return iterator{m_indexes.data() + m_offsets[key + 1]};
   }
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   AssociationMap<TDev>::const_iterator AssociationMap<TDev>::upper_bound(key_type key) const {
     if (key < 0 || key >= static_cast<key_type>(m_extents.keys)) {
       throw std::out_of_range("Key out of range in call to AssociationMap::upper_bound.");
@@ -191,7 +191,7 @@ namespace clue {
     return const_iterator{m_indexes.data() + m_offsets[key + 1]};
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   std::pair<typename AssociationMap<TDev>::iterator, typename AssociationMap<TDev>::iterator>
   AssociationMap<TDev>::equal_range(key_type key) {
     if (key < 0 || key >= static_cast<key_type>(m_extents.keys)) {
@@ -200,7 +200,7 @@ namespace clue {
     return {iterator{m_indexes.data() + m_offsets[key]},
             iterator{m_indexes.data() + m_offsets[key + 1]}};
   }
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   std::pair<typename AssociationMap<TDev>::const_iterator,
             typename AssociationMap<TDev>::const_iterator>
   AssociationMap<TDev>::equal_range(key_type key) const {
@@ -211,22 +211,22 @@ namespace clue {
             const_iterator{m_indexes.data() + m_offsets[key + 1]}};
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   inline AssociationMap<TDev>::Containers AssociationMap<TDev>::extract() const {
     return Containers{m_offsets, m_indexes};
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   inline const AssociationMapView& AssociationMap<TDev>::view() const {
     return m_view;
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   inline AssociationMapView& AssociationMap<TDev>::view() {
     return m_view;
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   inline ALPAKA_FN_HOST void AssociationMap<TDev>::initialize(size_type nelements, size_type nbins)
     requires std::same_as<TDev, alpaka::DevCpu>
   {
@@ -239,8 +239,8 @@ namespace clue {
     m_view.m_extents = {nbins, nelements};
   }
 
-  template <concepts::device TDev>
-  template <concepts::queue TQueue>
+  template <alpaka::onHost::concepts::Device TDev>
+  template <concepts::Queue TQueue>
   inline ALPAKA_FN_HOST void AssociationMap<TDev>::initialize(size_type nelements,
                                                               size_type nbins,
                                                               TQueue& queue) {
@@ -253,33 +253,33 @@ namespace clue {
     m_view.m_extents = {nbins, nelements};
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   inline ALPAKA_FN_HOST void AssociationMap<TDev>::reset(size_type nelements, size_type nbins) {
     m_extents = {nbins, nelements};
     m_view.m_extents = {nbins, nelements};
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   inline auto AssociationMap<TDev>::size() const {
     return m_extents.keys;
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   ALPAKA_FN_HOST inline auto& AssociationMap<TDev>::indexes() {
     return m_indexes;
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   ALPAKA_FN_HOST inline const device_buffer<TDev, int32_t[]>& AssociationMap<TDev>::offsets() const {
     return m_offsets;
   }
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   ALPAKA_FN_HOST inline device_buffer<TDev, int32_t[]>& AssociationMap<TDev>::offsets() {
     return m_offsets;
   }
 
-  template <concepts::device TDev>
-  template <concepts::accelerator TAcc, typename TFunc, concepts::queue TQueue>
+  template <alpaka::onHost::concepts::Device TDev>
+  template <concepts::accelerator TAcc, typename TFunc, concepts::Queue TQueue>
   ALPAKA_FN_HOST inline void AssociationMap<TDev>::fill(size_type size, TFunc func, TQueue& queue) {
     if (m_extents.keys == 0)
       return;
@@ -334,7 +334,7 @@ namespace clue {
                        size);
   }
 
-  template <concepts::device TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   ALPAKA_FN_HOST void AssociationMap<TDev>::fill(std::span<const key_type> associations)
     requires std::same_as<TDev, alpaka::DevCpu>
   {
@@ -358,8 +358,8 @@ namespace clue {
     }
   }
 
-  template <concepts::device TDev>
-  template <concepts::accelerator TAcc, concepts::queue TQueue>
+  template <alpaka::onHost::concepts::Device TDev>
+  template <concepts::accelerator TAcc, concepts::Queue TQueue>
   ALPAKA_FN_HOST inline void AssociationMap<TDev>::fill(size_type size,
                                                         std::span<const key_type> associations,
                                                         TQueue& queue) {

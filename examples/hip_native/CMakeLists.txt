@@ -7,13 +7,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(CLUEstering REQUIRED)
-find_package(alpaka REQUIRED)
-if(NOT CLUEstering_FOUND)
-  message(
-    FATAL_ERROR
-      "CLUEstering not found. This example requires it to be installed. Please install following the instructions in the README."
-  )
+if(NOT TARGET CLUEstering::CLUEstering)
+  find_package(CLUEstering REQUIRED)
+endif()
+
+if(NOT TARGET alpaka::alpaka)
+  find_package(alpaka REQUIRED)
 endif()
 
 include(CheckLanguage)
@@ -25,4 +24,5 @@ if(CMAKE_HIP_COMPILER)
   target_compile_definitions(native_hip.out PRIVATE ALPAKA_ACC_GPU_HIP_ENABLED)
 else()
   message(FATAL_ERROR "CUDA not found. Please install it.")
+  alpaka_finalize(native_hip.out)
 endif()

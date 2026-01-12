@@ -1,0 +1,7 @@
+add_subdirectory(basic)
+if(alpaka_DEP_CUDA)
+    add_subdirectory(cuda_native)
+endif()
+if(alpaka_DEP_HIP)
+    add_subdirectory(hip_native)
+endif()

@@ -89,31 +89,31 @@ namespace clue {
 
   template <std::size_t Ndim>
   class PointsHost;
-  template <std::size_t Ndim, concepts::device TDev>
+  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
   class PointsDevice;
 
-  template <concepts::queue TQueue, std::size_t Ndim, concepts::device TDev>
-  void copyToHost(TQueue& queue,
+  template <typename THost,concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
+  void copyToHost(THost &dev_host,TQueue& queue,
                   PointsHost<Ndim>& h_points,
                   const PointsDevice<Ndim, TDev>& d_points) {
-    alpaka::memcpy(
+    alpaka::onHost::memcpy(
         queue,
-        make_host_view(h_points.m_view.cluster_index, h_points.size()),
-        make_device_view(alpaka::getDev(queue), d_points.m_view.cluster_index, h_points.size()));
+        alpaka::makeView(dev_host.getDevice(),h_points.m_view.cluster_index, h_points.size()),
+        alpaka::makeView(queue.getDevice(), d_points.m_view.cluster_index, h_points.size()));
     h_points.mark_clustered();
   }
-  template <concepts::queue TQueue, std::size_t Ndim, concepts::device TDev>
+  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
   void copyToDevice(TQueue& queue,
                     PointsDevice<Ndim, TDev>& d_points,
                     const PointsHost<Ndim>& h_points) {
     // TODO: copy each coordinate column separately
-    alpaka::memcpy(
+    alpaka::onHost::memcpy(
         queue,
-        make_device_view(alpaka::getDev(queue), d_points.m_view.coords[0], Ndim * h_points.size()),
-        make_host_view(h_points.m_view.coords[0], Ndim * h_points.size()));
-    alpaka::memcpy(queue,
-                   make_device_view(alpaka::getDev(queue), d_points.m_view.weight, h_points.size()),
-                   make_host_view(h_points.m_view.weight, h_points.size()));
+        alpaka::makeView(queue.getDevice(), d_points.m_view.coords[0], Ndim * h_points.size()),
+        alpaka::makeView(h_points.m_view.coords[0], Ndim * h_points.size()));
+    alpaka::onHost::memcpy(queue,
+                   alpaka::makeView(queue.getDevice(), d_points.m_view.weight, h_points.size()),
+                   alpaka::makeView(h_points.m_view.weight, h_points.size()));
   }
 
 }  // namespace clue
