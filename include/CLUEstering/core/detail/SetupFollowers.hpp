@@ -9,11 +9,10 @@
 
 namespace clue::detail {
 
-  template <concepts::queue TQueue,
-            concepts::device TDev = decltype(alpaka::getDev(std::declval<TQueue>()))>
-  void setup_followers(TQueue& queue, std::optional<Followers<TDev>>& followers, int32_t n_points) {
+  template <typename TQueue>
+  void setup_followers(TQueue& queue, auto& followers, int32_t n_points) {
     if (!followers.has_value()) {
-      followers = std::make_optional<Followers<TDev>>(n_points, queue);
+      followers = ALPAKA_TYPEOF(followers)(n_points, queue);
     }
 
     if (!(followers->extents() >= n_points)) {

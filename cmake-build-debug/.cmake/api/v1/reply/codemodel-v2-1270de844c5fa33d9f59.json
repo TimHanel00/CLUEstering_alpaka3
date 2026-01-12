@@ -1,0 +1,135 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-a8d47a931a4da14c2e31.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16.0"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "_deps/alpaka-build",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.alpaka-build-Debug-29bec5c2249c91a1d331.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "cmake-build-debug/_deps/alpaka-src"
+				},
+				{
+					"build" : "examples",
+					"childIndexes" : 
+					[
+						3
+					],
+					"jsonFile" : "directory-examples-Debug-1c8b83b621b6ef38a245.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "examples"
+				},
+				{
+					"build" : "examples/basic",
+					"jsonFile" : "directory-examples.basic-Debug-b470e869df5bb143735e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 2,
+					"source" : "examples/basic",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						2
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						2
+					],
+					"name" : "CLUEstering"
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "alpaka",
+					"parentIndex" : 0
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3
+					],
+					"name" : "BasicCLUEsteringExample",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 3,
+					"id" : "openmp.out::@22af5c73606165bbb623",
+					"jsonFile" : "target-openmp.out-Debug-6ee677731c8aa574dbe4.json",
+					"name" : "openmp.out",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "serial.out::@22af5c73606165bbb623",
+					"jsonFile" : "target-serial.out-Debug-49a07cff264c3031d373.json",
+					"name" : "serial.out",
+					"projectIndex" : 2
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/tim/hzdr/workspace/CLUEport/cmake-build-debug",
+		"source" : "/home/tim/hzdr/workspace/CLUEport"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

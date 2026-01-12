@@ -4,7 +4,17 @@ project(
   CLUEstering
   LANGUAGES CXX
   VERSION 2.9.0)
+find_package(alpaka CONFIG QUIET)
+if(NOT alpaka_FOUND)
+  include(FetchContent)
+  FetchContent_Declare(
+          alpaka
+          GIT_REPOSITORY https://github.com/alpaka-group/alpaka3.git
+          GIT_TAG f5fd268184068398ec4f1eb30dbba077b7fabd02
+  )
+  FetchContent_MakeAvailable(alpaka)
 
+endif()
 option(BUILD_PYTHON "Build the Python bindings" OFF)
 
 if(BUILD_PYTHON)
@@ -63,3 +73,10 @@ configure_package_config_file(
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/CLUEsteringConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/CLUEsteringConfigVersion.cmake"
         DESTINATION lib/cmake/CLUEstering)
+option(CLUE_Examples "Build CLUE examples" OFF)
+
+if(CLUE_Examples)
+
+  set(CLUEstering_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+  add_subdirectory(examples)
+endif()

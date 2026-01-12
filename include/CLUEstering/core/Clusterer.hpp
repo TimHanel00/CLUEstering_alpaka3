@@ -9,12 +9,9 @@
 #include "CLUEstering/core/detail/ClusteringKernels.hpp"
 #include "CLUEstering/core/detail/SetupFollowers.hpp"
 #include "CLUEstering/core/detail/SetupTiles.hpp"
-#include "CLUEstering/core/detail/defines.hpp"
 #include "CLUEstering/data_structures/AssociationMap.hpp"
 #include "CLUEstering/data_structures/PointsHost.hpp"
 #include "CLUEstering/data_structures/PointsDevice.hpp"
-#include "CLUEstering/data_structures/internal/Followers.hpp"
-#include "CLUEstering/data_structures/internal/SeedArray.hpp"
 #include "CLUEstering/data_structures/internal/Tiles.hpp"
 
 #include <array>

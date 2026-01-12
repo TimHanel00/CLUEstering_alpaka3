@@ -5,25 +5,18 @@
 #include "CLUEstering/core/DistanceMetrics.hpp"
 #include "CLUEstering/core/ConvolutionalKernel.hpp"
 #include "CLUEstering/core/detail/ClusteringKernels.hpp"
-#include "CLUEstering/core/detail/ComputeTiles.hpp"
-#include "CLUEstering/core/detail/defines.hpp"
 #include "CLUEstering/core/detail/SetupFollowers.hpp"
 #include "CLUEstering/core/detail/SetupSeeds.hpp"
 #include "CLUEstering/core/detail/SetupTiles.hpp"
 #include "CLUEstering/data_structures/PointsHost.hpp"
 #include "CLUEstering/data_structures/PointsDevice.hpp"
 #include "CLUEstering/data_structures/internal/Followers.hpp"
-#include "CLUEstering/data_structures/internal/SeedArray.hpp"
-#include "CLUEstering/data_structures/internal/Tiles.hpp"
-#include "CLUEstering/utils/get_clusters.hpp"
 
-#include <alpaka/mem/view/Traits.hpp>
-#include <alpaka/vec/Vec.hpp>
+#include "CLUEstering/utils/get_clusters.hpp"
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <ranges>
 #include <stdexcept>
 
 namespace clue {
@@ -88,7 +81,7 @@ namespace clue {
 
     setup(queue, h_points, d_points);
     make_clusters_impl(h_points, d_points, metric, kernel, queue, block_size);
-    alpaka::wait(queue);
+    alpaka::onHost::wait(queue);
   }
   template <std::size_t Ndim>
   template <concepts::convolutional_kernel Kernel, concepts::distance_metric<Ndim> DistanceMetric>
@@ -102,7 +95,7 @@ namespace clue {
 
     setup(queue, h_points, d_points);
     make_clusters_impl(h_points, d_points, metric, kernel, queue, block_size);
-    alpaka::wait(queue);
+    alpaka::onHost::wait(queue);
   }
   template <std::size_t Ndim>
   template <concepts::convolutional_kernel Kernel, concepts::distance_metric<Ndim> DistanceMetric>
@@ -114,7 +107,7 @@ namespace clue {
                                              std::size_t block_size) {
     setup(queue, h_points, dev_points);
     make_clusters_impl(h_points, dev_points, metric, kernel, queue, block_size);
-    alpaka::wait(queue);
+    alpaka::onHost::wait(queue);
   }
   template <std::size_t Ndim>
   template <concepts::convolutional_kernel Kernel, concepts::distance_metric<Ndim> DistanceMetric>
@@ -126,7 +119,7 @@ namespace clue {
     detail::setup_tiles(queue, m_tiles, dev_points, m_pointsPerTile, m_wrappedCoordinates);
     detail::setup_followers(queue, m_followers, dev_points.size());
     make_clusters_impl(dev_points, metric, kernel, queue, block_size);
-    alpaka::wait(queue);
+    alpaka::onHost::wait(queue);
   }
 
   template <std::size_t Ndim>

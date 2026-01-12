@@ -1,0 +1,116 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"cmake-build-debug/_deps/alpaka-src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 98,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 100,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 118,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 121,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 124,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				{
+					"from" : "cmake-build-debug/_deps/alpaka-src/include",
+					"to" : "."
+				}
+			],
+			"type" : "directory"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/alpaka",
+			"paths" : 
+			[
+				"cmake-build-debug/_deps/alpaka-src/cmake/finalize.cmake",
+				"cmake-build-debug/_deps/alpaka-src/cmake/alpakaCommon.cmake",
+				"cmake-build-debug/_deps/alpaka-src/cmake/alpakaCuda.cmake",
+				"cmake-build-debug/_deps/alpaka-src/cmake/alpakaHip.cmake",
+				"cmake-build-debug/_deps/alpaka-src/cmake/alpakaOneApi.cmake",
+				"cmake-build-debug/_deps/alpaka-src/cmake/buildDependencies.cmake",
+				"cmake-build-debug/_deps/alpaka-src/cmake/common.cmake"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/alpaka",
+			"paths" : 
+			[
+				"cmake-build-debug/_deps/alpaka-build/alpakaConfig.cmake"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 4,
+			"component" : "Unspecified",
+			"destination" : "share",
+			"paths" : 
+			[
+				"cmake-build-debug/_deps/alpaka-src/tests"
+			],
+			"type" : "directory"
+		},
+		{
+			"backtrace" : 5,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/alpaka/tests",
+			"paths" : 
+			[
+				"cmake-build-debug/_deps/alpaka-src/cmake/tests/StdAtomicRef.cpp"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "_deps/alpaka-build",
+		"source" : "cmake-build-debug/_deps/alpaka-src"
+	}
+}

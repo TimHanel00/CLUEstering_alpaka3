@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/tim/hzdr/workspace/CLUEport/cmake-build-debug",
+  "command": "/usr/bin/c++ -DALPAKA_CMAKE_TARGET_ALPAKA -DALPAKA_CMAKE_TARGET_ALPAKA_FINALIZE_CALLED -DALPAKA_CMAKE_TARGET_HEADERS -DALPAKA_CMAKE_TARGET_HEADERS_FINALIZE_CALLED -DALPAKA_CMAKE_TARGET_HOST -DALPAKA_CMAKE_TARGET_HOST_FINALIZE_CALLED -DALPAKA_DISABLE_EXEC_CpuTbbBlocks -DALPAKA_DISABLE_TBB -Dalpaka_EXEC_CpuSerial -I/home/tim/hzdr/workspace/CLUEport/include -I/home/tim/hzdr/workspace/CLUEport/cmake-build-debug/CLUEstering -isystem /home/tim/hzdr/workspace/CLUEport/cmake-build-debug/_deps/alpaka-src/include -g -std=c++20 -fdiagnostics-color=always -fconcepts-diagnostics-depth=5 -fopenmp -o examples/basic/CMakeFiles/serial.out.dir/main.cpp.o -c /home/tim/hzdr/workspace/CLUEport/examples/basic/main.cpp",
+  "file": "/home/tim/hzdr/workspace/CLUEport/examples/basic/main.cpp",
+  "output": "examples/basic/CMakeFiles/serial.out.dir/main.cpp.o"
+},
+{
+  "directory": "/home/tim/hzdr/workspace/CLUEport/cmake-build-debug",
+  "command": "/usr/bin/c++ -DALPAKA_CMAKE_TARGET_ALPAKA -DALPAKA_CMAKE_TARGET_ALPAKA_FINALIZE_CALLED -DALPAKA_CMAKE_TARGET_HEADERS -DALPAKA_CMAKE_TARGET_HEADERS_FINALIZE_CALLED -DALPAKA_CMAKE_TARGET_HOST -DALPAKA_CMAKE_TARGET_HOST_FINALIZE_CALLED -DALPAKA_DISABLE_EXEC_CpuTbbBlocks -DALPAKA_DISABLE_TBB -Dalpaka_DEP_OMP -I/home/tim/hzdr/workspace/CLUEport/include -I/home/tim/hzdr/workspace/CLUEport/cmake-build-debug/CLUEstering -isystem /home/tim/hzdr/workspace/CLUEport/cmake-build-debug/_deps/alpaka-src/include -g -std=c++20 -fdiagnostics-color=always -fconcepts-diagnostics-depth=5 -fopenmp -o examples/basic/CMakeFiles/openmp.out.dir/main.cpp.o -c /home/tim/hzdr/workspace/CLUEport/examples/basic/main.cpp",
+  "file": "/home/tim/hzdr/workspace/CLUEport/examples/basic/main.cpp",
+  "output": "examples/basic/CMakeFiles/openmp.out.dir/main.cpp.o"
+}
+]

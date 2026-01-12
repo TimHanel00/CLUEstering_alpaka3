@@ -7,18 +7,16 @@
 #include <optional>
 
 namespace clue::detail {
-
-  template <concepts::queue TQueue,
-            concepts::device TDev = decltype(alpaka::getDev(std::declval<TQueue>()))>
+  template<typename TQueue,typename TDev>
   inline void setup_seeds(TQueue& queue,
-                          std::optional<clue::internal::SeedArray<TDev>>& seeds,
+                          std::optional<internal::SeedArray<TDev>>& seeds,
                           std::size_t seed_candidates) {
     if (!seeds.has_value() || seeds->capacity() < seed_candidates) {
       seeds = clue::internal::SeedArray<TDev>(queue, seed_candidates);
     } else {
       seeds->reset(queue);
     }
-    alpaka::wait(queue);
+    alpaka::onHost::wait(queue);
   }
 
 }  // namespace clue::detail

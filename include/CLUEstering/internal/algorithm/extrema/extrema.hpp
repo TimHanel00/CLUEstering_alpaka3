@@ -19,8 +19,9 @@
 namespace clue::internal::algorithm {
 
   template <typename ForwardIterator>
-  ALPAKA_FN_HOST inline constexpr ForwardIterator min_element(ForwardIterator first,
+  inline constexpr ForwardIterator min_element(ForwardIterator first,
                                                               ForwardIterator last) {
+      // output vector of each block
 #if defined(ALPAKA_ACC_GPU_CUDA_ENABLED) and not defined(ALPAKA_HOST_ONLY)
     return thrust::min_element(thrust::device, first, last);
 #elif defined(ALPAKA_ACC_GPU_HIP_ENABLED) and not defined(ALPAKA_HOST_ONLY)

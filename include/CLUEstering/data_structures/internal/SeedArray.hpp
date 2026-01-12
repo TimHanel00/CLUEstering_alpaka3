@@ -42,42 +42,44 @@ namespace clue::internal {
     }
   };
 
-  template <clue::concepts::device TDev = clue::Device>
+  template <typename TDev>
   class SeedArray {
   private:
-    clue::device_buffer<TDev, int32_t[]> m_buffer;
-    clue::device_buffer<TDev, std::size_t> m_dsize;
+    device_buffer<TDev, int32_t[]> m_buffer;
+    device_buffer<TDev, std::size_t> m_dsize;
     std::optional<std::size_t> m_size;
     std::size_t m_capacity;
     SeedArrayView m_view;
 
   public:
-    template <clue::concepts::queue TQueue>
+    template <clue::concepts::Queue TQueue>
     SeedArray(TQueue& queue, std::size_t size)
         : m_buffer{clue::make_device_buffer<int32_t[]>(queue, size)},
           m_dsize{clue::make_device_buffer<std::size_t>(queue)},
           m_size{std::nullopt},
           m_capacity{size},
           m_view{m_buffer.data(), m_dsize.data(), m_capacity} {
-      alpaka::memset(queue, m_dsize, 0u);
+      alpaka::onHost::memset(queue, m_dsize, 0u);
     }
 
     ALPAKA_FN_HOST constexpr auto capacity() const { return m_capacity; }
 
-    template <clue::concepts::queue TQueue>
+    template <clue::concepts::Queue TQueue>
     ALPAKA_FN_HOST auto size(TQueue& queue) {
       if (!m_size.has_value()) {
         m_size = std::make_optional<std::size_t>();
-        alpaka::memcpy(queue, clue::make_host_view(*m_size), m_dsize);
-        alpaka::wait(queue);
+        auto buf=alpaka::onHost::allocHostLike(*m_size);
+        alpaka::onHost::allocHost();
+        alpaka::onHost::alloc(queue, buf, m_dsize);
+        alpaka::onHost::wait(queue);
       }
       return *m_size;
     }
 
-    template <clue::concepts::queue TQueue>
+    template <clue::concepts::Queue TQueue>
     ALPAKA_FN_HOST auto reset(TQueue& queue) {
       m_size = std::nullopt;
-      alpaka::memset(queue, m_dsize, 0u);
+      alpaka::onHost::memset(queue, m_dsize, 0u);
     }
 
     ALPAKA_FN_HOST const auto& view() const { return m_view; }

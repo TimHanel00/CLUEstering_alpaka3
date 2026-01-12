@@ -14,9 +14,9 @@
 
 namespace clue::detail {
 
-  template <concepts::queue TQueue,
+  template <typename TQueue,
             std::size_t Ndim,
-            concepts::device TDev = decltype(alpaka::getDev(std::declval<TQueue>()))>
+            typename TDev>
   void setup_tiles(TQueue& queue,
                    std::optional<internal::Tiles<Ndim, TDev>>& tiles,
                    const PointsHost<Ndim>& points,
@@ -48,9 +48,9 @@ namespace clue::detail {
     alpaka::memcpy(queue, tiles->wrapped(), clue::make_host_view(wrapped_coordinates.data(), Ndim));
   }
 
-  template <concepts::queue TQueue,
+  template <concepts::Queue TQueue,
             std::size_t Ndim,
-            concepts::device TDev = decltype(alpaka::getDev(std::declval<TQueue>()))>
+            alpaka::onHost::concepts::Device TDev = decltype(alpaka::getDev(std::declval<TQueue>()))>
   void setup_tiles(TQueue& queue,
                    std::optional<internal::Tiles<Ndim, TDev>>& tiles,
                    const PointsDevice<Ndim, TDev>& points,

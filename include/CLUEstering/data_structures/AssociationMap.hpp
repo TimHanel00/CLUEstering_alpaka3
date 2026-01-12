@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "CLUEstering/core/detail/defines.hpp"
 #include "CLUEstering/data_structures/AssociationMapView.hpp"
 #include "CLUEstering/detail/concepts.hpp"
 #include "CLUEstering/internal/alpaka/memory.hpp"
@@ -14,28 +13,27 @@
 #include <span>
 
 namespace clue {
-
-  template <concepts::device TDev>
+  template <typename TDev>
   class AssociationMap;
 
   namespace internal {
 
-    template <std::size_t Ndim, clue::concepts::device TDev>
+    template <std::size_t Ndim, typename TDev>
     class Tiles;
 
-    template <clue::concepts::queue TQueue>
+    template <clue::concepts::Queue TQueue>
     auto make_associator(TQueue& queue, std::span<const int32_t> associations, int32_t elements);
-    auto make_associator(std::span<const int32_t> associations, int32_t elements)
-        -> AssociationMap<alpaka::DevCpu>;
+    auto make_associator(std::span<const int32_t> associations, int32_t elements);
   }  // namespace internal
 
   /// @brief The AssociationMap class is a data structure that maps keys to values.
   /// It associates integer keys with integer values in ono-to-many or many-to-many associations.
   ///
   /// @tparam TDev The device type to use for the allocation. Defaults to clue::Device.
-  template <concepts::device TDev = clue::Device>
+  template <alpaka::onHost::concepts::Device TDev>
   class AssociationMap {
   public:
+
     using key_type = int32_t;
     using mapped_type = int32_t;
     using value_type = std::pair<key_type, mapped_type>;
@@ -58,12 +56,6 @@ namespace clue {
     /// @brief Construct an empty AssociationMap
     AssociationMap() = default;
     /// @brief Construct an AssociationMap with a specific number of elements and bins
-    /// @param nelements The number of elements to allocate
-    /// @param nbins The number of bins to allocate
-    /// @note This constructor is only available for the CPU device
-    AssociationMap(size_type nelements, size_type nbins)
-      requires std::same_as<TDev, alpaka::DevCpu>;
-    /// @brief Construct an AssociationMap with a specific number of elements and bins
     ///
     /// @param nelements The number of elements to allocate
     /// @param nbins The number of bins to allocate
@@ -75,7 +67,7 @@ namespace clue {
     /// @param nelements The number of elements to allocate
     /// @param nbins The number of bins to allocate
     /// @param queue The queue to use for the allocation
-    template <concepts::queue TQueue>
+    template <concepts::Queue TQueue>
     AssociationMap(size_type nelements, size_type nbins, TQueue& queue);
 
     /// @brief Return the number of bins in the map
@@ -177,17 +169,17 @@ namespace clue {
     Extents m_extents;
 
     ALPAKA_FN_HOST void initialize(size_type nelements, size_type nbins)
-      requires std::same_as<TDev, alpaka::DevCpu>;
-    template <concepts::queue TQueue>
+      requires concepts::is_cpu_device_spec_v<TDev>;
+    template <concepts::Queue TQueue>
     ALPAKA_FN_HOST void initialize(size_type nelements, size_type nbins, TQueue& queue);
 
     ALPAKA_FN_HOST void reset(size_type nelements, size_type nbins);
 
-    template <concepts::accelerator TAcc, typename TFunc, concepts::queue TQueue>
+    template <typename TAcc, typename TFunc, concepts::Queue TQueue>
     ALPAKA_FN_HOST void fill(size_type size, TFunc func, TQueue& queue);
     ALPAKA_FN_HOST void fill(std::span<const key_type> associations)
-      requires std::same_as<TDev, alpaka::DevCpu>;
-    template <concepts::accelerator TAcc, concepts::queue TQueue>
+      requires concepts::is_cpu_device_spec_v<TDev>;
+    template <typename TAcc, concepts::Queue TQueue>
     ALPAKA_FN_HOST void fill(size_type size, std::span<const key_type> associations, TQueue& queue);
 
     ALPAKA_FN_HOST const auto& indexes() const;
@@ -196,19 +188,16 @@ namespace clue {
     ALPAKA_FN_HOST const device_buffer<TDev, int32_t[]>& offsets() const;
     ALPAKA_FN_HOST device_buffer<TDev, int32_t[]>& offsets();
 
-    template <concepts::device _TDev>
+    template <typename _TDev>
     friend class Followers;
 
-    template <std::size_t Ndim, concepts::device _TDev>
+    template <std::size_t Ndim, alpaka::onHost::concepts::Device _TDev>
     friend class internal::Tiles;
 
-    template <concepts::queue _TQueue>
+    template <concepts::Queue _TQueue>
     friend auto clue::internal::make_associator(_TQueue&, std::span<const int32_t>, int32_t);
-    friend auto clue::internal::make_associator(std::span<const int32_t>, int32_t)
-        -> AssociationMap<alpaka::DevCpu>;
+    friend auto clue::internal::make_associator(std::span<const int32_t>, int32_t);
   };
-
-  using host_associator = AssociationMap<alpaka::DevCpu>;
 
 }  // namespace clue
 

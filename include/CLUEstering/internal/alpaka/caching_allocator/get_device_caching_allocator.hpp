@@ -14,10 +14,10 @@ namespace clue {
 
   namespace detail {
 
-    template <typename TDevice, typename TQueue>
-    auto allocate_device_allocators() {
-      using Allocator = CachingAllocator<TDevice, TQueue>;
-      auto const& devices = clue::enumerate<alpaka::Platform<TDevice>>();
+    template <typename T_DeviceSelector, typename TQueue>
+    auto allocate_device_allocators(T_DeviceSelector const & selector) {
+      using Allocator = CachingAllocator<T_DeviceSelector, TQueue>;
+      auto const& devices = clue::devices(selector);
       auto const size = devices.size();
 
       // allocate the storage for the objects
@@ -49,7 +49,7 @@ namespace clue {
   }  // namespace detail
 
   template <typename TDevice, typename TQueue>
-  inline CachingAllocator<TDevice, TQueue>& getDeviceCachingAllocator(TDevice const& device) {
+  inline auto& getDeviceCachingAllocator(T_DeviceSelector const & selector) {
     // initialise all allocators, one per device
     static auto allocators = detail::allocate_device_allocators<TDevice, TQueue>();
 

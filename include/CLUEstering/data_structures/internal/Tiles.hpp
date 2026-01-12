@@ -17,10 +17,10 @@
 
 namespace clue::internal {
 
-  template <std::size_t Ndim, clue::concepts::device TDev>
+  template <std::size_t Ndim, typename TDev>
   class Tiles {
   public:
-    template <clue::concepts::queue TQueue>
+    template <clue::concepts::Queue TQueue>
     Tiles(TQueue& queue, int32_t n_points, int32_t n_tiles)
         : m_assoc{AssociationMap<TDev>(n_points, n_tiles, queue)},
           m_minmax{make_device_buffer<CoordinateExtremes<Ndim>>(queue)},
@@ -42,7 +42,7 @@ namespace clue::internal {
     const TilesView<Ndim>& view() const { return m_view; }
     TilesView<Ndim>& view() { return m_view; }
 
-    template <clue::concepts::queue TQueue>
+    template <clue::concepts::Queue TQueue>
     ALPAKA_FN_HOST void initialize(TQueue& queue, int32_t npoints, int32_t ntiles, int32_t nperdim) {
       m_assoc.initialize(npoints, ntiles, queue);
       m_ntiles = ntiles;
@@ -88,9 +88,9 @@ namespace clue::internal {
       }
     };
 
-    template <clue::concepts::accelerator TAcc, clue::concepts::queue TQueue>
+    template <typename TAcc, clue::concepts::Queue TQueue>
     ALPAKA_FN_HOST void fill(TQueue& queue, PointsDevice<Ndim, TDev>& d_points, size_t size) {
-      auto dev = alpaka::getDev(queue);
+      auto dev = queue.getDevice();
       auto pointsView = d_points.view();
       m_assoc.template fill<TAcc>(size, GetGlobalBin{pointsView, m_view}, queue);
     }

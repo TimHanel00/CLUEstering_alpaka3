@@ -7,17 +7,18 @@ target_link_libraries(serial.out PRIVATE alpaka::alpaka Boost::atomic
 target_compile_definitions(
   serial.out PRIVATE ALPAKA_HOST_ONLY ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED
                      CLUE_ENABLE_CACHING_ALLOCATOR)
-
+alpaka_finalize(serial.out)
 add_executable(threads.out ${CMAKE_SOURCE_DIR}/main.cpp)
 target_include_directories(
   threads.out PRIVATE ${CMAKE_SOURCE_DIR}/../../include
                       ${CMAKE_SOURCE_DIR}/../../benchmark)
 target_link_libraries(threads.out PRIVATE alpaka::alpaka Boost::atomic
                                           benchmark::benchmark)
+
 target_compile_definitions(
   threads.out PRIVATE ALPAKA_HOST_ONLY ALPAKA_ACC_CPU_B_SEQ_T_THREADS_ENABLED
                       CLUE_ENABLE_CACHING_ALLOCATOR)
-
+alpaka_finalize(threads.out)
 find_package(TBB)
 if(TBB_FOUND)
   add_executable(tbb.out ${CMAKE_SOURCE_DIR}/main.cpp)
@@ -29,6 +30,7 @@ if(TBB_FOUND)
   target_compile_definitions(
     tbb.out PRIVATE ALPAKA_HOST_ONLY ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLED
                     CLUE_ENABLE_CACHING_ALLOCATOR)
+  alpaka_finalize(tbb.out)
 endif()
 
 find_package(OpenMP)
@@ -45,4 +47,5 @@ if(OpenMP_CXX_FOUND)
                        CLUE_ENABLE_CACHING_ALLOCATOR)
   set_target_properties(openmp.out PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                               ${CMAKE_BINARY_DIR})
+  alpaka_finalize(openmp.out)
 endif()
