@@ -10,8 +10,11 @@
 #include <alpaka/alpaka.hpp>
 
 namespace clue {
-
-  template <alpaka::onHost::concepts::Device TDev>
+  namespace detail {
+    template <typename TDev>
+    class AssociationMapBase;
+  }
+  template <typename TDev>
   class AssociationMap;
 
   /// @brief A view into an association map data structure that can be passed to kernels.
@@ -24,17 +27,19 @@ namespace clue {
       std::size_t values;
     };
 
-  private:
+  protected:
     int32_t* m_indexes;
     int32_t* m_offsets;
     Extents m_extents;
-
-    AssociationMapView() = default;
+    //fail-safe constructor that prevents UB if view is accessed before wired
+    AssociationMapView() : m_indexes(nullptr), m_offsets(nullptr), m_extents{.keys=0U, .values=0U} {}
     AssociationMapView(int32_t* indexes, int32_t* offsets, std::size_t nvalues, std::size_t nkeys)
         : m_indexes(indexes), m_offsets(offsets), m_extents{nvalues, nkeys} {}
 
-    template <alpaka::onHost::concepts::Device TDev>
+    template <typename TDev>
     friend class AssociationMap;
+    template <typename TDev>
+    friend class detail::AssociationMapBase;
 
   public:
     /// @brief Get the extents of the association map.

@@ -11,6 +11,8 @@
 #include "CLUEstering/internal/alpaka/devices.hpp"
 #include "CLUEstering/detail/concepts.hpp"
 
+#include <CLUEstering/utils/get_queue.hpp>
+
 namespace clue {
 
   namespace internal::concepts {
@@ -30,26 +32,64 @@ namespace clue {
 
   }  // namespace internal::concepts
 
-  // for Extent, Dim1D, Idx
   using namespace alpaka_common;
+  template<typename T_Data,concepts::Queue T_Queue>
+  auto make_device_buffer(T_Queue && queue,alpaka::concepts::VectorOrScalar auto && extent) {
+    return clue::alloc<T_Data>(queue.getDevice(),ALPAKA_FORWARD(queue),extent);
+  }
+  template<typename T_Data,typename T_Device>
+  requires (!concepts::Queue<T_Device>)
+  auto make_device_buffer(T_Device && device,alpaka::concepts::VectorOrScalar auto && extent) {
 
-
-  // non-cached, non-pinned, scalar and 1-dimensional host buffers
-
-  template <internal::concepts::scalar T>
-  auto make_host_buffer() {
-    return alpaka::onHost::allocHost<T>();
+    return clue::alloc<T_Data>(ALPAKA_FORWARD(device),clue::get_queue(device),extent);
+  }
+  using namespace alpaka_common;
+  template<typename T_Data,concepts::Queue TQueue>
+  auto make_device_buffer(TQueue && queue) {
+    return clue::alloc<T_Data>(queue.getDevice(),ALPAKA_FORWARD(queue),Vec1D{1U});
+  }
+  using namespace alpaka_common;
+  template<typename T_Data,typename T_Device>
+  requires (!concepts::Queue<T_Device>)
+  auto make_device_buffer(T_Device && device) {
+    return clue::alloc<T_Data>(ALPAKA_FORWARD(device),clue::get_queue(device),Vec1D{1U});
   }
 
-  template <internal::concepts::unbounded_array T>
-  auto make_host_buffer(alpaka::concepts::Vector auto const extent) {
+
+  template <typename T>
+  auto make_host_buffer(alpaka::concepts::VectorOrScalar auto const extent) {
     return alpaka::onHost::allocHost<T>(extent);
   }
-
-  template <internal::concepts::bounded_array T>
+  template <typename T>
   auto make_host_buffer() {
-    return alpaka::onHost::allocHost<T>(Vec1D{std::extent_v<T>});
+    return alpaka::onHost::allocHost<T>(1U);
   }
+  //to create pinned host memory
+  template <typename T,concepts::Queue T_Queue>
+  requires concepts::NonHostApi<T_Queue>
+  auto make_host_buffer(T_Queue &queue,alpaka::concepts::VectorOrScalar auto const extent) {
+    return clue::alloc<T>(alpaka::api::host,queue,extent);
+  }
+  template<class T_Device, class T_Data>
+  struct GetBufferType;
+
+  // Host: use host buffer type
+  template<concepts::HostApi T_Device, class T_Data>
+  struct GetBufferType<T_Device, T_Data> {
+    using Elem = std::remove_extent_t<T_Data>;
+    using type = decltype(make_host_buffer<Elem>(std::declval<std::size_t>()));
+  };
+
+  // Non-host: use device buffer type
+  template<concepts::NonHostApi T_Device, class T_Data>
+  struct GetBufferType<T_Device, T_Data> {
+    using Elem = std::remove_extent_t<T_Data>;
+    using type = decltype(make_device_buffer<Elem>(
+        std::declval<T_Device>(), std::declval<std::size_t>()));
+  };
+
+  template<class T_Device, class T_Data>
+  using getBufferType = typename GetBufferType<T_Device, T_Data>::type;
   // alpaka3 memory allocations are implicitly synchronized therefore we dont need a queue
 
   // // potentially cached, pinned, scalar and 1-dimensional host buffers, associated to a work queue

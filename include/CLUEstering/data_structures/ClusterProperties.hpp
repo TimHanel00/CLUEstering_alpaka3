@@ -16,9 +16,10 @@ namespace clue {
 
   /// @brief The ClusterProperties class provides access to the properties of clusters
   /// such as the number of clusters, the size of each cluster and point associations.
+  template<typename THost>
   class ClusterProperties {
   private:
-    host_associator m_clusters_to_points;
+    HostAssociationMap m_clusters_to_points;
     std::vector<std::size_t> m_cluster_sizes;
     std::size_t m_nclusters;
 

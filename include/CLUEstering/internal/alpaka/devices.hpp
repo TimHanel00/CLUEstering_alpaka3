@@ -7,14 +7,121 @@
 #include <alpaka/alpaka.hpp>
 
 namespace clue {
-  // return the alpaka accelerator devices for the given platform
-  template <typename T_DeviceSelector>
-  auto devices(T_DeviceSelector const &selector) {
-    std::vector<ALPAKA_TYPEOF(selector.makeDevice(0u))> devices;
-    for (uint32_t devId=0;devId<selector.getDeviceCount();devId++) {
-      devices.emplace_back(selector.makeDevice(devId));
+
+    namespace internal {
+        struct SelectedBackendAndExec {
+
+#ifdef ALPAKA_SELECT_CpuSerial
+            using api=alpaka::api::Host;
+            using execs=std::tuple<alpaka::exec::CpuSerial>;
+#else
+#ifdef ALPAKA_SELECT_OMP
+            using api=alpaka::api::Host;
+            using execs=std::tuple<alpaka::exec::CpuOmpBlocks>;
+#else
+#ifdef alpaka_SELECT_CUDA
+            using api=alpaka::api::Host;
+            using execs=std::tuple<alpaka::exec::GpuCuda>;
+#else
+            /*if no target_compile_definition is specified we simply use the first enabled api
+            --> this allows backend selection solely based on the built in alpaka cmake options*/
+            using api=ALPAKA_TYPEOF(std::get<0>(alpaka::onHost::enabledApis));
+            using execs=ALPAKA_TYPEOF(alpaka::exec::enabledExecutors);
+
+#endif
+#endif
+#endif
+
+
+
+        };
+        template<typename T_DevSelector,typename T_Exec>
+        class DevicePoolImpl
+        {
+        public:
+
+            using Selector = T_DevSelector;
+
+            using Exec = T_Exec;
+            using Device = ALPAKA_TYPEOF(std::declval<Selector&>().makeDevice(0U));
+
+            using HostDevice = ALPAKA_TYPEOF(alpaka::onHost::makeHostDevice());
+
+            // --- host device (constant) ---
+            static auto hostDev() -> HostDevice const&
+            {
+                static HostDevice hd = alpaka::onHost::makeHostDevice();
+                return hd;
+            }
+
+            // --- executor storage (set each iteration if you want) ---
+            auto exec() -> auto const& { return m_exec;}
+            // --- main functionality: devices list + mapping ---
+            auto devices() const -> std::vector<Device> const& { return m_devices; }
+
+            [[nodiscard]] auto size() const -> std::size_t { return m_devices.size(); }
+
+            auto deviceAt(std::size_t idx) const -> Device const& { return m_devices.at(idx); }
+
+            auto indexOf(Device const& dev) const -> std::size_t
+            {
+                for(std::size_t i = 0; i < m_devices.size(); ++i) {
+                    if(m_devices[i] == dev) { return i;}
+                }
+                throw std::runtime_error("clue::DevicePool: device not found");
+            }
+            explicit DevicePoolImpl(T_DevSelector selector, T_Exec exec):m_exec(exec)
+            {
+
+                m_devices.reserve(selector.getDeviceCount());
+                for(uint32_t dev_id = 0; dev_id < selector.getDeviceCount(); ++dev_id) {
+                    m_devices.emplace_back(selector.makeDevice(dev_id));
+                }
+            }
+            T_Exec m_exec;
+            std::vector<Device> m_devices;
+        };
+        // return the alpaka accelerator devices for the given platform
+        template <typename T_DeviceSelector>
+        auto devices(T_DeviceSelector const &selector) {
+            std::vector<ALPAKA_TYPEOF(selector.makeDevice(0U))> devices;
+            for (uint32_t dev_id=0;dev_id<selector.getDeviceCount();dev_id++) {
+                devices.emplace_back(selector.makeDevice(dev_id));
+            }
+            return devices;
+        }
     }
-    return devices;
-  }
+
+    struct DevicePool {
+        using API = internal::SelectedBackendAndExec::api;
+        using Execs = internal::SelectedBackendAndExec::execs;
+        static auto get()
+        {
+
+            auto backend=std::get<0>(alpaka::onHost::allBackends(std::tuple<API>{}, Execs{}));
+
+            auto device_spec = backend[alpaka::object::deviceSpec];
+            auto dev_selector = alpaka::onHost::makeDeviceSelector(device_spec);
+            auto exec       = backend[alpaka::object::exec];
+            static auto dev_pool=internal::DevicePoolImpl{std::move(dev_selector),std::move(exec)};
+            return dev_pool;
+        }
+        static auto getHost() {
+            return get().hostDev();
+        }
+        static auto exec() {
+            return get().exec();
+        }
+        static auto indexOf(auto const& device) {
+            return get().indexOf(device);
+        }
+        static auto deviceAt(uint32_t idx) {
+            return get().deviceAt(idx);
+        }
+        static auto devices() {
+            return get().devices();
+        }
+    };
+    using Device=ALPAKA_TYPEOF(DevicePool::deviceAt(0));
 
 }  // namespace clue

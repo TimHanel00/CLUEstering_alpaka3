@@ -19,7 +19,7 @@ namespace clue {
   /// @param file_path The path to the CSV file to read
   /// @return A PointsHost object containing the points read from the file
   template <std::size_t NDim, concepts::Queue TQueue>
-  inline clue::PointsHost<NDim> read_csv(TQueue& queue, const std::string& file_path);
+  inline PointsHost<NDim> read_csv(TQueue& queue, const std::string& file_path);
 
   /// @brief Read output points from a CSV file into a PointsHost object
   ///
@@ -29,7 +29,7 @@ namespace clue {
   /// @param file_path The path to the CSV file to read
   /// @return A PointsHost object containing the output points read from the file
   template <std::size_t NDim, concepts::Queue TQueue>
-  inline clue::PointsHost<NDim> read_output(TQueue& queue, const std::string& file_path);
+  inline PointsHost<NDim> read_output(TQueue& queue, const std::string& file_path);
 
 }  // namespace clue
 

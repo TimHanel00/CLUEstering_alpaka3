@@ -18,7 +18,7 @@ namespace clue {
   namespace detail {
 
     template <std::size_t Ndim>
-    using Point = typename clue::PointsHost<Ndim>::Point;
+    using Point = typename PointsHost<Ndim>::Point;
 
     template <std::size_t Ndim>
     inline auto distance(const Point<Ndim>& lhs, const Point<Ndim>& rhs) {
@@ -29,9 +29,9 @@ namespace clue {
       return std::sqrt(dist);
     }
 
-    template <std::size_t Ndim>
-    inline auto silhouette(const clue::host_associator& clusters,
-                           const clue::PointsHost<Ndim>& points,
+    template <std::size_t Ndim,concepts::HostApi TDev>
+    inline auto silhouette(const AssociationMap<TDev>& clusters,
+                           const PointsHost<Ndim>& points,
                            int point) {
       auto a = 0.f;
       std::vector<float> b_values;
@@ -73,15 +73,15 @@ namespace clue {
   }  // namespace detail
 
   template <std::size_t Ndim>
-  inline auto silhouette(const clue::PointsHost<Ndim>& points, int point) {
-    const auto clusters = clue::get_clusters(points);
+  inline auto silhouette(const PointsHost<Ndim>& points, int point) {
+    const auto clusters = get_clusters(points);
 
     return detail::silhouette<Ndim>(clusters, points, point);
   }
 
   template <std::size_t Ndim>
-  inline auto silhouette(const clue::PointsHost<Ndim>& points) {
-    const auto clusters = clue::get_clusters(points);
+  inline auto silhouette(const PointsHost<Ndim>& points) {
+    const auto clusters = get_clusters(points);
     std::vector<float> scores;
     auto valid_point = [&](int point) -> bool { return points[point].cluster_index() != -1; };
     auto valid_cluster = [&](int point) -> bool {

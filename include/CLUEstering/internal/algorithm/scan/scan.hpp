@@ -88,7 +88,7 @@ namespace clue {
         co[i] = ci[i] + co[i - 1];
     }
   }
-  /**please refer to alpaka::scan for more scanning operations)
+  /**please refer to alpaka::scan for more advanced scanning operations with wider scope)**/
   // template <typename TAcc, typename T>
   // ALPAKA_FN_HOST_ACC ALPAKA_FN_INLINE void blockPrefixScan(const TAcc& acc,
   //                                                          T* __restrict__ c,
@@ -227,28 +227,28 @@ namespace clue {
 // declare the amount of block shared memory used by the multiBlockPrefixScan kernel
 namespace alpaka::trait {
 
-  // Variable size shared mem
-  template <clue::concepts::accelerator TAcc, typename T>
-  struct BlockSharedMemDynSizeBytes<clue::multiBlockPrefixScan<T>, TAcc> {
-    template <typename TVec>
-    ALPAKA_FN_HOST_ACC static std::size_t getBlockSharedMemDynSizeBytes(
-        clue::multiBlockPrefixScan<T> const& /* kernel */,
-        TVec const& /* blockThreadExtent */,
-        TVec const& /* threadElemExtent */,
-        T const* /* ci */,
-        T const* /* co */,
-        int32_t /* size */,
-        int32_t numBlocks,
-        int32_t const* /* pc */,
-        // This trait function does not receive the accelerator object to look up the warp size
-        std::size_t warpSize) {
-      // We need workspace (T[warpsize]) + partial sums (T[numblocks]).
-      if constexpr (clue::requires_single_thread_per_block_v<TAcc>) {
-        return sizeof(T) * numBlocks;
-      } else {
-        return sizeof(T) * (warpSize + numBlocks);
-      }
-    }
-  };
+  // // Variable size shared mem
+  // template <clue::concepts::accelerator TAcc, typename T>
+  // struct BlockSharedMemDynSizeBytes<clue::multiBlockPrefixScan<T>, TAcc> {
+  //   template <typename TVec>
+  //   ALPAKA_FN_HOST_ACC static std::size_t getBlockSharedMemDynSizeBytes(
+  //       clue::multiBlockPrefixScan<T> const& /* kernel */,
+  //       TVec const& /* blockThreadExtent */,
+  //       TVec const& /* threadElemExtent */,
+  //       T const* /* ci */,
+  //       T const* /* co */,
+  //       int32_t /* size */,
+  //       int32_t numBlocks,
+  //       int32_t const* /* pc */,
+  //       // This trait function does not receive the accelerator object to look up the warp size
+  //       std::size_t warpSize) {
+  //     // We need workspace (T[warpsize]) + partial sums (T[numblocks]).
+  //     if constexpr (clue::requires_single_thread_per_block_v<TAcc>) {
+  //       return sizeof(T) * numBlocks;
+  //     } else {
+  //       return sizeof(T) * (warpSize + numBlocks);
+  //     }
+  //   }
+  // };
 
 }  // namespace alpaka::trait

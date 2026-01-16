@@ -11,7 +11,6 @@
 #include <cassert>
 #include <cstddef>
 #include <span>
-
 namespace clue {
   namespace detail {
 
@@ -41,7 +40,7 @@ namespace clue {
   }
 
   template <concepts::Queue TQueue, std::size_t Ndim>
-  inline auto get_clusters(TQueue& queue, const PointsDevice<Ndim>& points) {
+  inline auto get_clusters(TQueue& queue, const PointsDevice<Ndim,DevType<TQueue>>& points) {
     assert(points.clustered());
     return detail::get_clusters(queue, points.clusterIndexes());
   }

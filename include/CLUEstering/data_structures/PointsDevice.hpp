@@ -16,67 +16,145 @@
 
 namespace clue {
 
-  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  void copyToHost(TQueue& queue,
-                  PointsHost<Ndim>& h_points,
-                  const PointsDevice<Ndim, TDev>& d_points);
+  template <concepts::Queue TQueue, std::size_t Ndim>
+  inline void copyToHost(TQueue& queue,
+                         PointsHost<Ndim>& h_points,
+                         const PointsDevice<Ndim, DevType<TQueue>>& d_points)
+  {
+    if(h_points.m_size != d_points.m_size) {
+      throw std::invalid_argument("copyToHost: size mismatch between host and device points");
+    }
 
-  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  void copyToDevice(TQueue& queue,
-                    PointsDevice<Ndim, TDev>& d_points,
-                    const PointsHost<Ndim>& h_points);
+    auto const extent = alpaka::Vec{static_cast<std::size_t>(h_points.m_size)};
 
+    // coords
+    for(std::size_t dim = 0; dim < Ndim; ++dim) {
+      auto dst = alpaka::makeView(alpaka::api::host, h_points.m_view.coords[dim], extent);
+      auto src = alpaka::makeView(queue,            d_points.m_view.coords[dim], extent);
+      alpaka::onHost::memcpy(queue, dst, src);
+    }
+
+    // weight
+    {
+      auto dst = alpaka::makeView(alpaka::api::host, h_points.m_view.weight, extent);
+      auto src = alpaka::makeView(queue,            d_points.m_view.weight, extent);
+      alpaka::onHost::memcpy(queue, dst, src);
+    }
+
+    // cluster index
+    {
+      auto dst = alpaka::makeView(alpaka::api::host, h_points.m_view.cluster_index, extent);
+      auto src = alpaka::makeView(queue,            d_points.m_view.cluster_index, extent);
+      alpaka::onHost::memcpy(queue, dst, src);
+    }
+
+    // Make host-side data immediately usable
+    alpaka::onHost::wait(queue);
+
+    // propagate clustered state + invalidate cached cluster props on host
+    h_points.m_clustered = d_points.m_clustered;
+    h_points.m_clusterProperties.reset();
+    h_points.m_nclusters.reset();
+  }
+
+  template <concepts::Queue TQueue, std::size_t Ndim>
+  inline auto copyToHost(TQueue& queue,
+                         const PointsDevice<Ndim, DevType<TQueue>>& d_points)
+  {
+    PointsHost<Ndim> h_points{d_points.m_size};
+    copyToHost(queue, h_points, d_points);
+    return h_points;
+  }
+  template <concepts::Queue TQueue, std::size_t Ndim>
+   inline void copyToDevice(TQueue& queue,
+                            PointsDevice<Ndim, DevType<TQueue>>& d_points,
+                            const PointsHost<Ndim>& h_points)
+  {
+    if(h_points.m_size != d_points.m_size) {
+      throw std::invalid_argument("copyToDevice: size mismatch between host and device points");
+    }
+
+    auto const extent = alpaka::Vec{static_cast<std::size_t>(h_points.m_size)};
+
+    // coords
+    for(std::size_t dim = 0; dim < Ndim; ++dim) {
+      auto dst = alpaka::makeView(queue,            d_points.m_view.coords[dim], extent);
+      auto src = alpaka::makeView(alpaka::api::host, h_points.m_view.coords[dim], extent);
+      alpaka::onHost::memcpy(queue, dst, src);
+    }
+
+    // weight
+    {
+      auto dst = alpaka::makeView(queue,            d_points.m_view.weight, extent);
+      auto src = alpaka::makeView(alpaka::api::host, h_points.m_view.weight, extent);
+      alpaka::onHost::memcpy(queue, dst, src);
+    }
+
+    // cluster index
+    {
+      auto dst = alpaka::makeView(queue,            d_points.m_view.cluster_index, extent);
+      auto src = alpaka::makeView(alpaka::api::host, h_points.m_view.cluster_index, extent);
+      alpaka::onHost::memcpy(queue, dst, src);
+    }
+
+    // preserve/propagate state + invalidate cached nclusters on device
+    d_points.m_clustered = h_points.m_clustered;
+    d_points.m_nclusters.reset();
+  }
+
+  template <concepts::Queue TQueue, std::size_t Ndim>
+  inline auto copyToDevice(TQueue& queue,
+                           const PointsHost<Ndim>& h_points)
+  {
+    auto dev = queue.getDevice(); // Alpaka3 Queue::getDevice() :contentReference[oaicite:1]{index=1}
+    PointsDevice<Ndim, DevType<TQueue>> d_points{dev, h_points.m_size};
+    copyToDevice(queue, d_points, h_points);
+    return d_points;
+  }
   /// @brief The PointsDevice class is a data structure that manages points on a device.
   /// It provides methods to allocate, access, and manipulate points in device memory.
   ///
   /// @tparam Ndim The number of dimensions of the points to manage
   /// @tparam TDev The device type to use for the allocation. Defaults to clue::Device.
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
+  template <std::size_t Ndim,alpaka::onHost::concepts::Device TDev>
   class PointsDevice : public internal::points_interface<PointsDevice<Ndim, TDev>> {
-  private:
-    using deviceBuffer= make_host_buffer();
-    device_buffer<TDev, std::byte[]> m_buffer;
+    getBufferType<TDev,std::byte> m_buffer;
     PointsView<Ndim> m_view;
     std::optional<std::size_t> m_nclusters;
     int32_t m_size;
     bool m_clustered = false;
-
   public:
     /// @brief Construct a PointsDevice object
     ///
-    /// @param queue The queue to use for the device operations
+    /// @param device The device where points are allocated
     /// @param n_points The number of points to allocate
-    template <concepts::Queue TQueue>
-    PointsDevice(TQueue& queue, int32_t n_points);
+    PointsDevice(TDev& device, int32_t n_points);
 
     /// @brief Construct a PointsDevice object with a pre-allocated buffer
     ///
-    /// @param queue The queue to use for the device operations
+    /// @param device The device where points are allocated
     /// @param n_points The number of points to allocate
     /// @param buffer The buffer to use for the points
-    template <concepts::Queue TQueue>
-    PointsDevice(TQueue& queue, int32_t n_points, std::span<std::byte> buffer);
+    PointsDevice(TDev& device, int32_t n_points, std::span<std::byte> buffer);
 
     /// @brief Constructs a container for the points allocated on the device using interleaved data
     ///
-    /// @param queue The queue to use for memory allocation
+    /// @param device The device where points are allocated
     /// @param n_points The number of points
     /// @param input_buffer The pre-allocated buffer containing interleaved coordinates and weights
     /// @param output_buffer The pre-allocated buffer to store the cluster indexes
     /// @note The input buffer must contain the coordinates and weights in an SoA format
-    template <concepts::Queue TQueue>
-    PointsDevice(TQueue& queue, int32_t n_points, std::span<float> input, std::span<int> output);
+    PointsDevice(TDev& device, int32_t n_points, std::span<float> input, std::span<int> output);
 
     /// @brief Constructs a container for the points allocated on the device using separate coordinate and weight buffers
     ///
-    /// @param queue The queue to use for memory allocation
+    /// @param device device where points are allocated
     /// @param n_points The number of points
     /// @param coordinates The pre-allocated buffer containing the coordinates
     /// @param weights The pre-allocated buffer containing the weights
     /// @param output The pre-allocated buffer to store the cluster indexes
     /// @note The coordinates buffer must have a size of n_points * Ndim
-    template <concepts::Queue TQueue>
-    PointsDevice(TQueue& queue,
+    PointsDevice(TDev& device,
                  int32_t n_points,
                  std::span<float> coordinates,
                  std::span<float> weights,
@@ -84,33 +162,31 @@ namespace clue {
 
     /// @brief Constructs a container for the points allocated on the device using interleaved data
     ///
-    /// @param queue The queue to use for memory allocation
+    /// @param device device where points are allocated
     /// @param n_points The number of points
     /// @param input_buffer The pre-allocated buffer containing interleaved coordinates and weights
     /// @param output_buffer The pre-allocated buffer to store the cluster indexes
     /// @note The input buffer must contain the coordinates and weights in an SoA format
-    template <concepts::Queue TQueue>
-    PointsDevice(TQueue& queue, int32_t n_points, float* input, int* output);
+    PointsDevice(TDev& device, int32_t n_points, float* input, int* output);
 
     /// @brief Constructs a container for the points allocated on the device using separate coordinate and weight buffers
     ///
-    /// @param queue The queue to use for memory allocation
+    /// @param device device where points are allocated
     /// @param n_points The number of points
     /// @param coordinates The pre-allocated buffer containing the coordinates
     /// @param weights The pre-allocated buffer containing the weights
     /// @param output The pre-allocated buffer to store the cluster indexes
     /// @note The coordinates buffer must have a size of n_points * Ndim
-    template <concepts::Queue TQueue>
-    PointsDevice(TQueue& queue, int32_t n_points, float* coordinates, float* weights, int* output);
+    PointsDevice(TDev& device, int32_t n_points, float* coordinates, float* weights, int* output);
 
     /// @brief Construct a PointsDevice object with a pre-allocated buffer
     ///
-    /// @param queue The queue to use for the device operations
+    /// @param device device where points are allocated
     /// @param n_points The number of points to allocate
     /// @param buffers The buffers to use for the points
-    template <concepts::Queue TQueue, concepts::Pointer... TBuffers>
+    template <concepts::Pointer... TBuffers>
       requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-    PointsDevice(TQueue& queue, int32_t n_points, TBuffers... buffers);
+    PointsDevice(TDev& device, int32_t n_points, TBuffers... buffers);
 
     PointsDevice(const PointsDevice&) = delete;
     PointsDevice& operator=(const PointsDevice&) = delete;
@@ -176,15 +252,15 @@ namespace clue {
 
     void mark_clustered() { m_clustered = true; }
 
-    template <std::size_t _Ndim>
+    template <concepts::Queue _TQueue,std::size_t _Ndim>
     friend class Clusterer;
-    template <concepts::Queue _TQueue, std::size_t _Ndim, alpaka::onHost::concepts::Device _TDev>
+    template <concepts::Queue _TQueue, std::size_t _Ndim>
     friend void copyToHost(_TQueue& queue,
                            PointsHost<_Ndim>& h_points,
-                           const PointsDevice<_Ndim, _TDev>& d_points);
-    template <concepts::Queue _TQueue, std::size_t _Ndim, alpaka::onHost::concepts::Device _TDev>
+                           const PointsDevice<_Ndim, DevType<_TQueue>>& d_points);
+    template <concepts::Queue _TQueue, std::size_t _Ndim>
     friend void copyToDevice(_TQueue& queue,
-                             PointsDevice<_Ndim, _TDev>& d_points,
+                             PointsDevice<_Ndim, DevType<_TQueue>>& d_points,
                              const PointsHost<_Ndim>& h_points);
     friend struct internal::points_interface<PointsDevice<Ndim, TDev>>;
   };

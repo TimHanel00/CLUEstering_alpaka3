@@ -17,7 +17,7 @@ endif()
 if(alpaka_EXEC_CpuSerial)
   add_executable(serial.out main.cpp)
   target_compile_definitions(serial.out
-                             PRIVATE alpaka_EXEC_CpuSerial)
+                             PRIVATE alpaka_SELECT_CpuSerial)
   target_link_libraries(serial.out PRIVATE CLUEstering::CLUEstering
                                            alpaka::alpaka)
   alpaka_finalize(serial.out)
@@ -31,7 +31,7 @@ if(alpaka_DEP_TBB)
     message(" TBB not found. Please install it if you want to use the tbb executor!")
   else()
     add_executable(tbb.out main.cpp)
-    target_compile_definitions(tbb.out PRIVATE alpaka_DEP_TBB)
+    target_compile_definitions(tbb.out PRIVATE alpaka_SELECT_TBB)
     target_link_libraries(tbb.out PRIVATE CLUEstering::CLUEstering alpaka::alpaka
             TBB::tbb)
     alpaka_finalize(tbb.out)
@@ -46,7 +46,7 @@ if(alpaka_DEP_OMP)
   endif()
   add_executable(openmp.out main.cpp)
   target_compile_definitions(openmp.out
-                             PRIVATE alpaka_DEP_OMP)
+                             PRIVATE alpaka_SELECT_OMP)
   target_link_libraries(openmp.out PRIVATE CLUEstering::CLUEstering
                                            alpaka::alpaka OpenMP::OpenMP_CXX)
   alpaka_finalize(openmp.out)
@@ -60,7 +60,7 @@ if(alpaka_DEP_CUDA)
     add_executable(cuda.out main.cpp)
     target_link_libraries(cuda.out PRIVATE CLUEstering::CLUEstering
                                            alpaka::alpaka)
-    target_compile_definitions(cuda.out PRIVATE alpaka_DEP_CUDA)
+    target_compile_definitions(cuda.out PRIVATE alpaka_SELECT_CUDA)
     target_compile_options(cuda.out PRIVATE --expt-relaxed-constexpr)
     set_target_properties(cuda.out PROPERTIES CUDA_SEPARABLE_COMPILATION ON
                                               CUDA_ARCHITECTURES native)

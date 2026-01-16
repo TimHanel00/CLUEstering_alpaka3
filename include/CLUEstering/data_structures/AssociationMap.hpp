@@ -7,198 +7,268 @@
 #include "CLUEstering/data_structures/AssociationMapView.hpp"
 #include "CLUEstering/detail/concepts.hpp"
 #include "CLUEstering/internal/alpaka/memory.hpp"
-
+#include "CLUEstering/data_structures/detail/AssociationMapBase.hpp"
 #include <span>
 #include <alpaka/alpaka.hpp>
-#include <span>
-
+#include "CLUEstering/data_structures/detail/AssociationMap.hpp"
 namespace clue {
-  template <typename TDev>
-  class AssociationMap;
-
+  namespace detail {
+    template <typename TDev>
+    class AssociationMapBase;
+  }
   namespace internal {
 
     template <std::size_t Ndim, typename TDev>
     class Tiles;
-
-    template <clue::concepts::Queue TQueue>
-    auto make_associator(TQueue& queue, std::span<const int32_t> associations, int32_t elements);
-    auto make_associator(std::span<const int32_t> associations, int32_t elements);
   }  // namespace internal
-
-  /// @brief The AssociationMap class is a data structure that maps keys to values.
-  /// It associates integer keys with integer values in ono-to-many or many-to-many associations.
-  ///
-  /// @tparam TDev The device type to use for the allocation. Defaults to clue::Device.
-  template <alpaka::onHost::concepts::Device TDev>
-  class AssociationMap {
+class HostAssociationMap : public detail::AssociationMapBase<alpaka::api::Host>
+  {
+    using Base = detail::AssociationMapBase<alpaka::api::Host>;
   public:
+    using Base::size_type;
+    using Base::key_type;
+    using Base::mapped_type;
 
-    using key_type = int32_t;
-    using mapped_type = int32_t;
-    using value_type = std::pair<key_type, mapped_type>;
-    using size_type = std::size_t;
-    using iterator = mapped_type*;
-    using const_iterator = const mapped_type*;
-    using keys_container_type = device_buffer<TDev, key_type[]>;
-    using mapped_container_type = device_buffer<TDev, mapped_type[]>;
+    HostAssociationMap() = delete;
 
-    struct Extents {
-      size_type keys;
-      size_type values;
-    };
-
-    struct Containers {
-      const keys_container_type& keys;
-      const mapped_container_type& values;
-    };
-
-    /// @brief Construct an empty AssociationMap
-    AssociationMap() = default;
-    /// @brief Construct an AssociationMap with a specific number of elements and bins
-    ///
-    /// @param nelements The number of elements to allocate
-    /// @param nbins The number of bins to allocate
-    /// @param dev The device to use for the allocation
-    AssociationMap(size_type nelements, size_type nbins, const TDev& dev);
-
-    /// @brief Construct an AssociationMap with a specific number of elements and bins
-    ///
-    /// @param nelements The number of elements to allocate
-    /// @param nbins The number of bins to allocate
-    /// @param queue The queue to use for the allocation
-    template <concepts::Queue TQueue>
-    AssociationMap(size_type nelements, size_type nbins, TQueue& queue);
-
-    /// @brief Return the number of bins in the map
-    ///
-    /// @return The number of bins in the map
-    auto size() const;
-    /// @brief Return the extents of the internal buffers
-    ///
-    /// @return A struct containing the number of keys and values in the map
-    auto extents() const;
-
-    /// @brief Return iterator to the beginning of the content buffer
-    /// @return An iterator to the beginning of the content buffer
-    iterator begin();
-    /// @brief Return const iterator to the beginning of the content buffer
-    /// @return A const iterator to the beginning of the content buffer
-    const_iterator begin() const;
-    /// @brief Return const iterator to the beginning of the content buffer
-    /// @return A const iterator to the beginning of the content buffer
-    const_iterator cbegin() const;
-
-    /// @brief Return iterator to the end of the content buffer
-    /// @return An iterator to the end of the content buffer
-    iterator end();
-    /// @brief Return const iterator to the end of the content buffer
-    /// @return A const iterator to the end of the content buffer
-    const_iterator end() const;
-    /// @brief Return const iterator to the end of the content buffer
-    /// @return A const iterator to the end of the content buffer
-    const_iterator cend() const;
-
-    // TODO: the STL implementation for std::flat_multimap returns any element with the given key,
-    // Should we do the same? Should we return the first element or return a pair that gives the entire range?
-    // In the first case it would be equavalent to lower_bound, in the second case it would be equivalent to equal_range.
-    iterator find(key_type key);
-    const_iterator find(key_type key) const;
-
-    /// @brief Count the number of elements with the given key
-    ///
-    /// @param key The key to count
-    /// @return The number of elements associated to a given key
-    size_type count(key_type key) const;
-
-    /// @brief Check if the map contains elements with a given key
-    ///
-    /// @param key The key to check
-    /// @return True if the map contains elements with the given key, false otherwise
-    bool contains(key_type key) const;
-
-    /// @brief Get the iterator to the first element with a given key
-    ///
-    /// @param key The key to search for
-    /// @return An iterator to the first element with the given key
-    iterator lower_bound(key_type key);
-    /// @brief Get the const iterator to the first element with a given key
-    ///
-    /// @param key The key to search for
-    /// @return A const iterator to the first element with the given key
-    const_iterator lower_bound(key_type key) const;
-
-    /// @brief Get the iterator to the first element with a key greater than the given key
-    ///
-    /// @param key The key to search for
-    /// @return An iterator to the first element with a key greater than the given key
-    iterator upper_bound(key_type key);
-    /// @brief Get the const iterator to the first element with a key greater than the given key
-    ///
-    /// @param key The key to search for
-    /// @return A const iterator to the first element with a key greater than the given key
-    const_iterator upper_bound(key_type key) const;
-
-    /// @brief Get the range of elements with a given key
-    ///
-    /// @param key The key to search for
-    /// @return A pair of iterators representing the range of elements with the given key
-    std::pair<iterator, iterator> equal_range(key_type key);
-    /// @brief Get the const range of elements with a given key
-    ///
-    /// @param key The key to search for
-    /// @return A pair of const iterators representing the range of elements with the given key
-    std::pair<const_iterator, const_iterator> equal_range(key_type key) const;
-
-    /// @brief Get a const-reference to the underlying containers
-    ///
-    /// @return A Containers object
-    Containers extract() const;
-
-    /// @brief Get the constant view of the association map
-    /// @return A const reference to the AssociationMapView
-    const AssociationMapView& view() const;
-    /// @brief Get the view of the association map
-    /// @return A reference to the AssociationMapView
-    AssociationMapView& view();
-
-  private:
-    device_buffer<TDev, mapped_type[]> m_indexes;
-    device_buffer<TDev, key_type[]> m_offsets;
-    AssociationMapView m_view;
-    Extents m_extents;
+    HostAssociationMap(size_type nelements, size_type nbins)
+      : Base(
+          make_host_buffer<mapped_type>(nelements),
+          make_host_buffer<key_type>(nbins + 1))
+    {
+      Base::wire_view(nelements, nbins);
+      std::memset(Base::m_offsets.data(), 0, nbins * sizeof(key_type));
+    }
 
     ALPAKA_FN_HOST void initialize(size_type nelements, size_type nbins)
-      requires concepts::is_cpu_device_spec_v<TDev>;
+    {
+      Base::m_indexes = make_host_buffer<mapped_type>(nelements);
+      Base::m_offsets = make_host_buffer<key_type>(nbins + 1);
+      Base::wire_view(nelements, nbins);
+      std::memset(Base::m_offsets.data(), 0, nbins * sizeof(key_type));
+    }
     template <concepts::Queue TQueue>
-    ALPAKA_FN_HOST void initialize(size_type nelements, size_type nbins, TQueue& queue);
+    ALPAKA_FN_HOST void fill(
+    TQueue&,
+    size_type size,
+    std::span<const key_type> associations)
+    {
+      // sanity check (optional but recommended)
+      ALPAKA_ASSERT(size == associations.size());
 
-    ALPAKA_FN_HOST void reset(size_type nelements, size_type nbins);
-
-    template <typename TAcc, typename TFunc, concepts::Queue TQueue>
-    ALPAKA_FN_HOST void fill(size_type size, TFunc func, TQueue& queue);
+      fill(associations);
+    }
     ALPAKA_FN_HOST void fill(std::span<const key_type> associations)
-      requires concepts::is_cpu_device_spec_v<TDev>;
-    template <typename TAcc, concepts::Queue TQueue>
-    ALPAKA_FN_HOST void fill(size_type size, std::span<const key_type> associations, TQueue& queue);
+    {
+      std::vector<key_type> sizes(Base::m_extents.keys, 0);
+      std::for_each(associations.begin(), associations.end(), [&](key_type key) {
+        if (key >= 0) {
+          ++sizes[key];
+        }
+      });
 
-    ALPAKA_FN_HOST const auto& indexes() const;
-    ALPAKA_FN_HOST auto& indexes();
-
-    ALPAKA_FN_HOST const device_buffer<TDev, int32_t[]>& offsets() const;
-    ALPAKA_FN_HOST device_buffer<TDev, int32_t[]>& offsets();
-
-    template <typename _TDev>
-    friend class Followers;
-
-    template <std::size_t Ndim, alpaka::onHost::concepts::Device _TDev>
-    friend class internal::Tiles;
-
-    template <concepts::Queue _TQueue>
-    friend auto clue::internal::make_associator(_TQueue&, std::span<const int32_t>, int32_t);
-    friend auto clue::internal::make_associator(std::span<const int32_t>, int32_t);
+      std::vector<key_type> temporary_keys(Base::m_extents.keys + 1);
+      temporary_keys[0] = 0;
+      std::inclusive_scan(sizes.begin(), sizes.end(), temporary_keys.begin() + 1);
+      std::copy(temporary_keys.data(), temporary_keys.data() + Base::m_extents.keys + 1, Base::m_offsets.data());
+      for (auto i = 0u; i < associations.size(); ++i) {
+        if (associations[i] >= 0) {
+          auto& offset = temporary_keys[associations[i]];
+          Base::m_indexes[offset] = i;
+          ++offset;
+        }
+      }
+    }
   };
+  template<typename TDev>
+  class DevAssociationMap : public detail::AssociationMapBase<TDev>
+  {
+    using Base = detail::AssociationMapBase<TDev>;
+  public:
+    using typename Base::size_type;
+    using typename Base::key_type;
+    using typename Base::mapped_type;
 
+    DevAssociationMap() = delete;
+
+    DevAssociationMap(TDev const& dev, size_type nelements, size_type nbins)
+      : Base(
+          make_device_buffer<mapped_type>(dev, nelements), //index buffer allocation
+          make_device_buffer<key_type>(dev, nbins + 1))    //offset buffer allocation
+    {
+      Base::wire_view(nelements, nbins);
+    }
+
+    template <concepts::Queue TQueue>
+    DevAssociationMap(size_type nelements, size_type nbins, TQueue& queue)
+      : Base(
+          make_device_buffer<mapped_type>(queue, size_type{nelements}), //index buffer allocation
+          make_device_buffer<key_type>(queue, size_type{nbins + 1}))  //offset buffer allocation
+    {
+      Base::wire_view(nelements, nbins);
+    }
+    template <concepts::Queue TQueue>
+    ALPAKA_FN_HOST void initialize(
+    TQueue& queue,
+    size_type nelements,
+    size_type nbins)
+    {
+      Base::m_indexes = make_device_buffer<mapped_type>(queue.getDevice(), size_type{nelements});
+      Base::m_offsets = make_device_buffer<key_type>(queue.getDevice(), size_type{nbins + 1});
+
+      Base::wire_view(nelements, nbins);
+    }
+    static void dump_range(const char* name, const int32_t* p, int begin, int end) {
+      std::cout << name << " [" << begin << ".." << end << "]: ";
+      for (int i = begin; i <= end; ++i) {
+        std::cout << i << ":" << p[i] << " ";
+      }
+      std::cout << std::endl;
+    }
+
+    static void dump_head(const char* name, const int32_t* p, int n, int count=16) {
+      dump_range(name, p, 0, std::min(n-1, count-1));
+    }
+
+
+    template <concepts::Queue TQueue,class TFunc>
+    ALPAKA_FN_HOST void fill(TQueue& queue,size_type size, TFunc func)
+    {
+      auto exec = DevicePool::exec();
+      auto device = queue.getDevice();
+    if (Base::m_extents.keys == 0)
+        return;
+    const int32_t nbins = static_cast<int32_t>(Base::m_extents.keys);
+
+
+    // 1) Build per-element association/bin info
+    auto bin_buffer = make_device_buffer<int32_t>(device, std::size_t{size});
+
+    constexpr auto blocksize = size_type{512};
+    const auto gridsize = alpaka::divCeil(size, blocksize);
+    const auto workdiv  = alpaka::onHost::FrameSpec{gridsize, blocksize};
+
+      queue.enqueue(
+          exec,
+          workdiv,
+          detail::KernelComputeAssociations<TFunc>{},
+          size,
+          bin_buffer.data(),
+          nbins,
+          func);
+
+    // 2) Compute per-key sizes (histogram-like)
+    auto sizes_buffer = make_device_buffer<int32_t>(device, size_type{Base::m_extents.keys});
+    alpaka::onHost::memset(queue, sizes_buffer, 0);
+
+    queue.enqueue(
+        exec,
+        workdiv,
+        detail::KernelComputeAssociationSizes{},
+        bin_buffer.data(),
+        sizes_buffer.data(),
+        nbins,
+        size);
+
+    // 3) Prefix scan -> offsets
+    //    We want:
+    //      temp_offsets[0] = 0
+    //      temp_offsets[i+1] = sum_{j<=i} sizes[j]
+    //    This is exactly exclusiveScan(sizes) into temp_offsets+1.
+
+    auto temp_offsets = make_device_buffer<int32_t>(device, size_type{Base::m_extents.keys + 1});
+    alpaka::onHost::memset(queue, temp_offsets, int32_t{0}, Vec1D{1});
+
+    auto sizes_mdspan   = alpaka::makeMdSpan(sizes_buffer.data(), Vec1D{Base::m_extents.keys});
+    auto offsets_mdspan = alpaka::makeMdSpan(temp_offsets.data() + 1, Vec1D{Base::m_extents.keys});
+
+    const auto scanBufferSize =
+        alpaka::onHost::getScanBufferSize<int32_t>(sizes_mdspan.getExtents());
+
+    auto scan_buffer = make_device_buffer<std::byte>(device, Vec1D{scanBufferSize});
+    alpaka::onHost::inclusiveScan(
+        queue,
+        exec,
+        scan_buffer,
+        offsets_mdspan,
+        sizes_mdspan);
+
+    // 4) Copy offsets into Base storage
+    alpaka::onHost::memcpy(
+        queue,
+        alpaka::makeView(device, Base::m_offsets.data(), Vec1D{Base::m_extents.keys + 1}),
+        temp_offsets);
+    // 5) Fill associator indices using computed offsets
+    queue.enqueue(
+    exec,
+        workdiv,
+        detail::KernelFillAssociator{},
+        Base::m_indexes.data(),
+        bin_buffer.data(),
+        temp_offsets.data(),nbins,
+        size);
+      alpaka::onHost::wait(queue);
+    }
+
+    template <concepts::Queue TQueue>
+    ALPAKA_FN_HOST void fill(TQueue& queue,size_type size, std::span<const key_type> associations)
+    {
+      auto exec = DevicePool::exec();
+      if (Base::m_extents.keys == 0)
+            return;
+      const int32_t nbins = static_cast<int32_t>(Base::m_extents.keys);
+      constexpr size_type blockSize = 512;
+      const size_type gridSize = alpaka::divCeil(size, blockSize);
+      const auto frameSpec = alpaka::onHost::FrameSpec(gridSize, blockSize);
+
+      auto sizes_buffer = make_device_buffer<key_type>(queue.getDevice(), size_type{Base::m_extents.keys});
+      alpaka::onHost::memset(queue, sizes_buffer, 0);
+      queue.enqueue(       exec,frameSpec,
+                           detail::KernelComputeAssociationSizes{},
+                           associations.data(),
+                           sizes_buffer.data(),nbins,
+                           size);
+
+      auto block_counter = make_device_buffer<int32_t>(queue.getDevice());
+      alpaka::onHost::memset(queue, block_counter, 0);
+
+      // Allocate output offsets (size = keys + 1)
+      auto temp_offsets = make_device_buffer<key_type>(queue.getDevice(), Base::m_extents.keys + 1);
+
+      // temp_offsets[0] = 0
+      alpaka::onHost::memset(queue, temp_offsets, key_type{0}, Vec1D{1});
+      // Create mdspans
+      auto sizes_mdspan =alpaka::makeMdSpan(sizes_buffer.data(),Vec1D{Base::m_extents.keys});
+
+      auto offsets_mdspan =
+          alpaka::makeMdSpan(
+              temp_offsets.data() + 1,
+              Vec1D{Base::m_extents.keys});
+
+
+      auto scanBufferSize =
+          alpaka::onHost::getScanBufferSize<key_type>(sizes_mdspan.getExtents());
+
+      auto scan_buffer = make_device_buffer<std::byte>(queue.getDevice(), Vec1D{scanBufferSize});
+
+      alpaka::onHost::exclusiveScan(
+          queue,
+          exec,
+          scan_buffer,
+          offsets_mdspan,
+          sizes_mdspan);
+
+
+      alpaka::onHost::memcpy(queue,
+                     alpaka::makeView(queue.getDevice(), Base::m_offsets.data(), Vec1D{Base::m_extents.keys + 1}),
+                     temp_offsets);
+      queue.enqueue(exec,frameSpec,
+                         detail::KernelFillAssociator{},
+                         Base::m_indexes.data(),
+                         associations.data(),
+                         temp_offsets.data(),
+                         nbins,
+                         size);
+    }
+  };
 }  // namespace clue
-
-#include "CLUEstering/data_structures/detail/AssociationMap.hpp"

@@ -19,23 +19,22 @@
 
 namespace clue {
 
-  template <std::size_t NDim, concepts::Queue TQueue>
-  clue::PointsHost<NDim> read_output(TQueue& queue, const std::string& file_path);
+  template <std::size_t NDim>
+  ::clue::PointsHost<NDim> read_output(const std::string& file_path);
 
-  template <concepts::Queue TQueue, std::size_t Ndim,alpaka::onHost::concepts::Device TDev>
-  void copyToHost(TQueue& queue,
-                  PointsHost<Ndim>& h_points,
-                  const PointsDevice<Ndim, TDev>& d_points);
+  template <concepts::Queue TQueue,std::size_t Ndim>
+  void copyToHost(TQueue& queue,PointsHost<Ndim>& h_points,
+                  const PointsDevice<Ndim, DevType<TQueue>>& d_points);
 
-  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  auto copyToHost(TQueue& queue, const PointsDevice<Ndim, TDev>& d_points);
+  template <concepts::Queue TQueue, std::size_t Ndim>
+  auto copyToHost(TQueue& queue, const PointsDevice<Ndim, DevType<TQueue>>& d_points);
 
-  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
+  template <concepts::Queue TQueue, std::size_t Ndim>
   void copyToDevice(TQueue& queue,
-                    PointsDevice<Ndim, TDev>& d_points,
+                    PointsDevice<Ndim, DevType<TQueue>>& d_points,
                     const PointsHost<Ndim>& h_points);
 
-  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
+  template <concepts::Queue TQueue, std::size_t Ndim>
   auto copyToDevice(TQueue& queue, const PointsHost<Ndim>& h_points);
 
   /// @brief The PointsHost class is a data structure that manages points in host memory.
@@ -44,10 +43,9 @@ namespace clue {
   /// @tparam Ndim The number of dimensions of the points to manage
   template <std::size_t Ndim>
   class PointsHost : public internal::points_interface<PointsHost<Ndim>> {
-  private:
-    std::optional<host_buffer<std::byte[]>> m_buffer;
+    std::optional<ALPAKA_TYPEOF(make_host_buffer<std::byte>(std::size_t{}))> m_buffer;
     PointsView<Ndim> m_view;
-    std::optional<ClusterProperties> m_clusterProperties;
+    std::optional<ClusterProperties<alpaka::api::Host>> m_clusterProperties;
     std::optional<std::size_t> m_nclusters;
     int32_t m_size;
     bool m_clustered = false;
@@ -68,82 +66,67 @@ namespace clue {
 
     /// @brief Constructs a container for the points allocated on the host
     ///
-    /// @param queue The queue to use for memory allocation
     /// @param n_points The number of points to allocate
-    template <concepts::Queue TQueue>
-    PointsHost(TQueue& queue, int32_t n_points);
+    PointsHost(int32_t n_points);
 
     /// @brief Constructs a container for the points allocated on the host using a pre-allocated buffers
     ///
-    /// @param queue The queue to use for memory allocation
     /// @param n_points The number of points
     /// @param buffer The pre-allocated buffer to use for the points data
-    template <concepts::Queue TQueue>
-    PointsHost(TQueue& queue, int32_t n_points, std::span<std::byte> buffer);
+    PointsHost(int32_t n_points, std::span<std::byte> buffer);
 
     /// @brief Constructs a container for the points allocated on the host using interleaved data
     ///
-    /// @param queue The queue to use for memory allocation
     /// @param n_points The number of points
     /// @param input_buffer The pre-allocated buffer containing interleaved coordinates and weights
     /// @param output_buffer The pre-allocated buffer to store the cluster indexes
     /// @note The input buffer must contain the coordinates and weights in an SoA format
-    template <concepts::Queue TQueue>
-    PointsHost(TQueue& queue, int32_t n_points, std::span<float> input, std::span<int> output);
+    PointsHost(int32_t n_points, std::span<float> input, std::span<int> output);
 
     /// @brief Constructs a container for the points allocated on the host using separate coordinate and weight buffers
     ///
-    /// @param queue The queue to use for memory allocation
     /// @param n_points The number of points
     /// @param coordinates The pre-allocated buffer containing the coordinates
     /// @param weights The pre-allocated buffer containing the weights
     /// @param output The pre-allocated buffer to store the cluster indexes
     /// @note The coordinates buffer must have a size of n_points * Ndim
-    template <concepts::Queue TQueue>
-    PointsHost(TQueue& queue,
-               int32_t n_points,
+    PointsHost(int32_t n_points,
                std::span<float> coordinates,
                std::span<float> weights,
                std::span<int> output);
 
     /// @brief Constructs a container for the points allocated on the host using multiple pre-allocated buffers
     ///
-    /// @param queue The queue to use for memory allocation
     /// @param n_points The number of points
     /// @param buffers The pre-allocated buffers to use for the points data
-    template <concepts::Queue TQueue, std::ranges::contiguous_range... TBuffers>
+    template <std::ranges::contiguous_range... TBuffers>
       requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-    PointsHost(TQueue& queue, int32_t n_points, TBuffers&&... buffers);
+    PointsHost(int32_t n_points, TBuffers&&... buffers);
 
     /// @brief Constructs a container for the points allocated on the host using interleaved data
     ///
-    /// @param queue The queue to use for memory allocation
     /// @param n_points The number of points
     /// @param input_buffer The pre-allocated buffer containing interleaved coordinates and weights
     /// @param output_buffer The pre-allocated buffer to store the cluster indexes
     /// @note The input buffer must contain the coordinates and weights in an SoA format
-    template <concepts::Queue TQueue>
-    PointsHost(TQueue& queue, int32_t n_points, float* input, int* output);
+    PointsHost(int32_t n_points, float* input, int* output);
 
     /// @brief Constructs a container for the points allocated on the host using separate coordinate and weight buffers
     ///
-    /// @param queue The queue to use for memory allocation
     /// @param n_points The number of points
     /// @param coordinates The pre-allocated buffer containing the coordinates
     /// @param weights The pre-allocated buffer containing the weights
     /// @param output The pre-allocated buffer to store the cluster indexes
     /// @note The coordinates buffer must have a size of n_points * Ndim
-    template <concepts::Queue TQueue>
-    PointsHost(TQueue& queue, int32_t n_points, float* coordinates, float* weights, int* output);
+    PointsHost(int32_t n_points, float* coordinates, float* weights, int* output);
 
     /// @brief Constructs a container for the points allocated on the host using multiple pre-allocated buffers
     ///
-    /// @param queue The queue to use for memory allocation
     /// @param n_points The number of points
     /// @param buffers The pre-allocated buffers to use for the points data
-    template <concepts::Queue TQueue, concepts::Pointer... TBuffers>
+    template < concepts::Pointer... TBuffers>
       requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-    PointsHost(TQueue& queue, int32_t n_points, TBuffers... buffers);
+    PointsHost(int32_t n_points, TBuffers... buffers);
 
     PointsHost(const PointsHost&) = delete;
     PointsHost& operator=(const PointsHost&) = delete;
@@ -218,19 +201,19 @@ namespace clue {
 
     void mark_clustered() { m_clustered = true; }
 
-    template <std::size_t _Ndim>
+    template <concepts::Queue _TQueue,std::size_t _Ndim>
     friend class Clusterer;
-    template <concepts::Queue _TQueue, std::size_t _Ndim, alpaka::onHost::concepts::Device _TDev>
+    template <concepts::Queue _TQueue, std::size_t _Ndim>
     friend void copyToHost(_TQueue& queue,
                            PointsHost<_Ndim>& h_points,
-                           const PointsDevice<_Ndim, _TDev>& d_points);
-    template <concepts::Queue _TQueue, std::size_t _Ndim, alpaka::onHost::concepts::Device _TDev>
+                           const PointsDevice<_Ndim, DevType<_TQueue>>& d_points);
+    template <concepts::Queue _TQueue, std::size_t _Ndim>
     friend void copyToDevice(_TQueue& queue,
-                             PointsDevice<_Ndim, _TDev>& d_points,
+                             PointsDevice<_Ndim, DevType<_TQueue>>& d_points,
                              const PointsHost<_Ndim>& h_points);
     friend struct internal::points_interface<PointsHost<Ndim>>;
     template <std::size_t NDim, concepts::Queue TQueue>
-    friend clue::PointsHost<NDim> read_output(TQueue& queue, const std::string& file_path);
+    friend PointsHost<NDim> read_output(TQueue& queue, const std::string& file_path);
   };
 
 }  // namespace clue

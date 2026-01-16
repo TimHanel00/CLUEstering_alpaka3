@@ -27,15 +27,15 @@ namespace clue {
   /// and runs the clustering algorithm on host or device points.
   ///
   /// @tparam Ndim The number of dimensions of the points to cluster
-  template <std::size_t Ndim>
+  template <concepts::Queue TQueue,std::size_t Ndim>
   class Clusterer {
   private:
-    using CoordinateExtremes = clue::internal::CoordinateExtremes<Ndim>;
-    using PointsHost = clue::PointsHost<Ndim>;
-    using PointsDevice = clue::PointsDevice<Ndim, clue::Device>;
-    using TilesDevice = clue::internal::Tiles<Ndim, clue::Device>;
-    using FollowersDevice = clue::Followers<clue::Device>;
-    using Acc = internal::Acc;
+    using CoordinateExtremes = internal::CoordinateExtremes<Ndim>;
+    using TPointsHost = PointsHost<Ndim>;
+    using TDev=DevType<TQueue>;
+    using TPointsDevice = PointsDevice<Ndim, TDev>;
+    using TilesDevice = internal::Tiles<Ndim, TDev>;
+    using FollowersDevice = Followers<TDev>;
 
     float m_dc;
     float m_seed_dc;
@@ -45,29 +45,30 @@ namespace clue {
     std::array<uint8_t, Ndim> m_wrappedCoordinates;
 
     std::optional<TilesDevice> m_tiles;
-    std::optional<clue::internal::SeedArray<>> m_seeds;
+    std::optional<internal::SeedArray<TDev>> m_seeds;
     std::optional<FollowersDevice> m_followers;
 
-    void setup(Queue& queue, const PointsHost& h_points, PointsDevice& dev_points) {
+    void setup(TQueue& queue, const TPointsHost& h_points, TPointsDevice& dev_points) {
       detail::setup_tiles(queue, m_tiles, h_points, m_pointsPerTile, m_wrappedCoordinates);
       detail::setup_followers(queue, m_followers, h_points.size());
-      clue::copyToDevice(queue, dev_points, h_points);
+      copyToDevice(queue, dev_points, h_points);
+      alpaka::onHost::wait(queue);
     }
 
-    template <concepts::convolutional_kernel Kernel = FlatKernel,
-              concepts::distance_metric<Ndim> DistanceMetric = clue::EuclideanMetric<Ndim>>
-    void make_clusters_impl(PointsHost& h_points,
-                            PointsDevice& dev_points,
+    template <typename Kernel = FlatKernel,
+              concepts::distance_metric<Ndim> DistanceMetric = EuclideanMetric<Ndim>>
+    void make_clusters_impl(TPointsHost& h_points,
+                            TPointsDevice& dev_points,
                             const DistanceMetric& metric,
                             const Kernel& kernel,
-                            Queue& queue,
+                            TQueue& queue,
                             std::size_t block_size);
-    template <concepts::convolutional_kernel Kernel = FlatKernel,
-              concepts::distance_metric<Ndim> DistanceMetric = clue::EuclideanMetric<Ndim>>
-    void make_clusters_impl(PointsDevice& dev_points,
+    template <typename Kernel = FlatKernel,
+              concepts::distance_metric<Ndim> DistanceMetric = EuclideanMetric<Ndim>>
+    void make_clusters_impl(TPointsDevice& dev_points,
                             const DistanceMetric& metric,
                             const Kernel& kernel,
-                            Queue& queue,
+                            TQueue& queue,
                             std::size_t block_size);
 
   public:
@@ -91,7 +92,7 @@ namespace clue {
     /// @param dm Minimum distance between clusters. This parameter is optional and by default dc is used.
     /// @param seed_dc Distance threshold for seed points. This parameter is optional and by default dc is used.
     /// @param pPBin Number of points per bin, used to determine the tile size
-    Clusterer(Queue& queue,
+    Clusterer(TQueue& queue,
               float dc,
               float rhoc,
               std::optional<float> dm = std::nullopt,
@@ -120,11 +121,11 @@ namespace clue {
     /// @param metric The distance metric to use for clustering, default is EuclideanMetric
     /// @param kernel The convolutional kernel to use for computing the local densities, default is FlatKernel with height 0.5
     /// @param block_size The size of the blocks to use for clustering, default is 256
-    template <concepts::convolutional_kernel Kernel = FlatKernel,
-              concepts::distance_metric<Ndim> DistanceMetric = clue::EuclideanMetric<Ndim>>
-    void make_clusters(Queue& queue,
-                       PointsHost& h_points,
-                       const DistanceMetric& metric = clue::EuclideanMetric<Ndim>{},
+    template <typename Kernel = FlatKernel,
+              concepts::distance_metric<Ndim> DistanceMetric = EuclideanMetric<Ndim>>
+    void make_clusters(TQueue& queue,
+                       TPointsHost& h_points,
+                       const DistanceMetric& metric = EuclideanMetric<Ndim>{},
                        const Kernel& kernel = FlatKernel{.5f},
                        std::size_t block_size = 256);
     /// @brief Construct the clusters from host points
@@ -136,10 +137,10 @@ namespace clue {
     /// @param kernel The convolutional kernel to use for computing the local densities, default is FlatKernel with height 0.5
     /// @param block_size The size of the blocks to use for clustering, default is 256
     /// @note This method creates a temporary queue for the operations on the device
-    template <concepts::convolutional_kernel Kernel = FlatKernel,
-              concepts::distance_metric<Ndim> DistanceMetric = clue::EuclideanMetric<Ndim>>
-    void make_clusters(PointsHost& h_points,
-                       const DistanceMetric& metric = clue::EuclideanMetric<Ndim>{},
+    template <typename Kernel = FlatKernel,
+              concepts::distance_metric<Ndim> DistanceMetric = EuclideanMetric<Ndim>>
+    void make_clusters(TPointsHost& h_points,
+                       const DistanceMetric& metric = EuclideanMetric<Ndim>{},
                        const Kernel& kernel = FlatKernel{.5f},
                        std::size_t block_size = 256);
     /// @brief Construct the clusters from host and device points
@@ -152,12 +153,12 @@ namespace clue {
     /// @param metric The distance metric to use for clustering, default is EuclideanMetric
     /// @param kernel The convolutional kernel to use for computing the local densities, default is FlatKernel with height 0.5
     /// @param block_size The size of the blocks to use for clustering, default is 256
-    template <concepts::convolutional_kernel Kernel = FlatKernel,
-              concepts::distance_metric<Ndim> DistanceMetric = clue::EuclideanMetric<Ndim>>
-    void make_clusters(Queue& queue,
-                       PointsHost& h_points,
-                       PointsDevice& dev_points,
-                       const DistanceMetric& metric = clue::EuclideanMetric<Ndim>{},
+    template <typename Kernel = FlatKernel,
+              concepts::distance_metric<Ndim> DistanceMetric = EuclideanMetric<Ndim>>
+    void make_clusters(TQueue& queue,
+                       TPointsHost& h_points,
+                       TPointsDevice& dev_points,
+                       const DistanceMetric& metric = EuclideanMetric<Ndim>{},
                        const Kernel& kernel = FlatKernel{.5f},
                        std::size_t block_size = 256);
     /// @brief Construct the clusters from device points
@@ -169,11 +170,11 @@ namespace clue {
     /// @param metric The distance metric to use for clustering, default is EuclideanMetric
     /// @param kernel The convolutional kernel to use for computing the local densities, default is FlatKernel with height 0.5
     /// @param block_size The size of the blocks to use for clustering, default is 256
-    template <concepts::convolutional_kernel Kernel = FlatKernel,
-              concepts::distance_metric<Ndim> DistanceMetric = clue::EuclideanMetric<Ndim>>
-    void make_clusters(Queue& queue,
-                       PointsDevice& dev_points,
-                       const DistanceMetric& metric = clue::EuclideanMetric<Ndim>{},
+    template <typename Kernel = FlatKernel,
+              concepts::distance_metric<Ndim> DistanceMetric = EuclideanMetric<Ndim>>
+    void make_clusters(TQueue& queue,
+                       TPointsDevice& dev_points,
+                       const DistanceMetric& metric = EuclideanMetric<Ndim>{},
                        const Kernel& kernel = FlatKernel{.5f},
                        std::size_t block_size = 256);
 
@@ -193,14 +194,14 @@ namespace clue {
     /// @brief Get the clusters from the host points
     ///
     /// @param h_points Host points
-    /// @return An associator mapping clusters and points
-    host_associator getClusters(const PointsHost& h_points);
+    /// @return An host associator mapping clusters and points
+    auto getClusters(const TPointsHost& h_points);
     /// @brief Get the clusters from the device points
     /// This function returns an associator object mapping the clusters to the points they contain.
     ///
     /// @param d_points Device points
-    /// @return An associator mapping clusters and points
-    AssociationMap<Device> getClusters(Queue& queue, const PointsDevice& d_points);
+    /// @return An device associator mapping clusters and points
+    auto getClusters(TQueue& queue, const TPointsDevice& d_points);
   };
 
 }  // namespace clue

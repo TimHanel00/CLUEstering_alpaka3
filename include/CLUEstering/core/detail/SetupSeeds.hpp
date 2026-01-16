@@ -12,7 +12,7 @@ namespace clue::detail {
                           std::optional<internal::SeedArray<TDev>>& seeds,
                           std::size_t seed_candidates) {
     if (!seeds.has_value() || seeds->capacity() < seed_candidates) {
-      seeds = clue::internal::SeedArray<TDev>(queue, seed_candidates);
+      seeds = internal::SeedArray<TDev>(queue, seed_candidates);
     } else {
       seeds->reset(queue);
     }

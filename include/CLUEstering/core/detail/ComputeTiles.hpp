@@ -14,49 +14,51 @@ namespace clue::detail {
 
   template <std::size_t Ndim>
   void compute_tile_size(internal::CoordinateExtremes<Ndim>* min_max,
-                         float* tile_sizes,
-                         const clue::PointsHost<Ndim>& h_points,
+                         alpaka::concepts::IMdSpan auto tile_sizes,
+                         const PointsHost<Ndim>& h_points,
                          int32_t nPerDim) {
     for (size_t dim{}; dim != Ndim; ++dim) {
       auto coords = h_points.coords(dim);
-      const float dimMax = std::reduce(coords.begin(),
-                                       coords.end(),
-                                       std::numeric_limits<float>::lowest(),
-                                       clue::nostd::maximum<float>{});
-      const float dimMin = std::reduce(coords.begin(),
-                                       coords.end(),
-                                       std::numeric_limits<float>::max(),
-                                       clue::nostd::minimum<float>{});
 
-      min_max->min(dim) = dimMin;
-      min_max->max(dim) = dimMax;
 
-      const float tileSize = (dimMax - dimMin) / nPerDim;
+      min_max->min(dim) = *std::min_element(coords.begin(), coords.end());
+      min_max->max(dim) = *std::max_element(coords.begin(), coords.end());
+
+      const float tileSize = (min_max->max(dim) - min_max->min(dim)) / nPerDim;
       tile_sizes[dim] = tileSize;
     }
   }
 
-  template <std::size_t Ndim>
-  void compute_tile_size(internal::CoordinateExtremes<Ndim>* min_max,
-                         float* tile_sizes,
-                         const clue::PointsDevice<Ndim>& dev_points,
+  template <concepts::Queue TQueue,std::size_t Ndim,typename TDev>
+  void compute_tile_size(TQueue const &queue,internal::CoordinateExtremes<Ndim>* min_max,
+                         alpaka::concepts::IMdSpan auto tile_sizes,
+                         const PointsDevice<Ndim,TDev>& dev_points,
                          uint32_t nPerDim) {
     for (size_t dim{}; dim != Ndim; ++dim) {
+      auto d_max = make_device_buffer<float>(queue, 1U);
+      auto d_min = make_device_buffer<float>(queue, 1U);
+
       auto coords = dev_points.coords(dim);
-      const auto dimMax = clue::internal::algorithm::reduce(coords.begin(),
-                                                            coords.end(),
-                                                            std::numeric_limits<float>::lowest(),
-                                                            clue::nostd::maximum<float>{});
-      const auto dimMin = clue::internal::algorithm::reduce(coords.begin(),
-                                                            coords.end(),
-                                                            std::numeric_limits<float>::max(),
-                                                            clue::nostd::minimum<float>{});
+      auto mdSpan=alpaka::makeMdSpan(coords.data(),coords.size());
+      alpaka::onHost::reduce(queue, DevicePool::exec(),
+                       std::numeric_limits<float>::lowest(),
+                       d_max.data(),
+                       alpaka::math::max,
+                       mdSpan);
 
-      min_max->min(dim) = dimMin;
-      min_max->max(dim) = dimMax;
+      alpaka::onHost::reduce(queue, DevicePool::exec(),
+                             std::numeric_limits<float>::max(),
+                             d_min.data(),
+                             alpaka::math::min,
+                             mdSpan);
+      float h_max{};
+      float h_min{};
+      alpaka::onHost::memcpy(queue, &h_max, d_max);
+      alpaka::onHost::memcpy(queue, &h_min, d_min);
+      min_max->min(dim) = h_min;
+      min_max->max(dim) = h_max;
 
-      const float tileSize = (dimMax - dimMin) / nPerDim;
-      tile_sizes[dim] = tileSize;
+      tile_sizes[dim] = (h_max - h_min) / static_cast<float>(nPerDim);
     }
   }
 

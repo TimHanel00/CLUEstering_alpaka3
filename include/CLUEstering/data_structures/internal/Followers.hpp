@@ -7,10 +7,10 @@
 namespace clue {
 
   class AssociationMapView;
-  template <alpaka::onHost::concepts::Device TDev>
+  template <typename TDev>
   class AssociationMap;
 
-  template <alpaka::onHost::concepts::Device TDev>
+  template <typename TDev>
   class Followers {
   public:
     Followers(int32_t npoints, const TDev& dev) : m_assoc(npoints, npoints, dev) {}
@@ -19,13 +19,13 @@ namespace clue {
 
     template <concepts::Queue TQueue>
     ALPAKA_FN_HOST void initialize(int32_t npoints, TQueue& queue) {
-      m_assoc.initialize(npoints, npoints, queue);
+      m_assoc.initialize(queue,npoints, npoints);
     }
     ALPAKA_FN_HOST void reset(int32_t npoints) { m_assoc.reset(npoints, npoints); }
 
-    template <concepts::accelerator TAcc, concepts::Queue TQueue, std::size_t Ndim>
+    template <concepts::Queue TQueue, std::size_t Ndim>
     ALPAKA_FN_HOST void fill(TQueue& queue, const PointsDevice<Ndim, TDev>& d_points) {
-      m_assoc.template fill<TAcc>(d_points.size(), d_points.nearestHigher(), queue);
+      m_assoc.fill(queue,d_points.size(), d_points.nearestHigher());
     }
 
     ALPAKA_FN_HOST inline constexpr int32_t extents() const { return m_assoc.extents().values; }
@@ -34,9 +34,9 @@ namespace clue {
     ALPAKA_FN_HOST AssociationMapView& view() { return m_assoc.view(); }
 
   private:
-    AssociationMap<TDev> m_assoc;
+    DevAssociationMap<TDev> m_assoc;
   };
 
-  using FollowersView = clue::AssociationMapView;
+  using FollowersView = ::clue::AssociationMapView;
 
 }  // namespace clue
