@@ -85,13 +85,13 @@ namespace clue {
   };
 
   namespace concepts {
-
-    /// @brief Concept describing a convolutional kernel
-    template <typename TAcc,typename TKernel>
-    concept convolutional_kernel = requires(
-        TAcc const& acc,TKernel&& kernel, float distance, int point_i, int point_j) {
-      { kernel(acc, distance, point_i, point_j) } -> std::same_as<float>;
-    };
+    // /// important: its no longer possible to get the accelerator (type) on the Host therfore any usage of this concept on the host wont work
+    // /// @brief Concept describing a convolutional kernel
+    // template <typename TStorage,typename TKernel>
+    // concept convolutional_kernel = requires(
+    //     alpaka::onAcc::Acc<TStorage> const& acc,TKernel&& kernel, float distance, int point_i, int point_j) {
+    //   { kernel(acc, distance, point_i, point_j) } -> std::same_as<float>;
+    // };
 
   }  // namespace concepts
 

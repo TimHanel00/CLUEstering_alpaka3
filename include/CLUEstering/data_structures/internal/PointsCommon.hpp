@@ -85,35 +85,11 @@ namespace clue {
 
   // TODO: implement for better cache use
   template <std::size_t Ndim>
-  int32_t computeAlignSoASize(int32_t n_points);
+  auto computeAlignSoASize(int32_t n_points) -> int32_t;
 
   template <std::size_t Ndim>
   class PointsHost;
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
   class PointsDevice;
-
-  template <typename THost,concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  void copyToHost(THost &dev_host,TQueue& queue,
-                  PointsHost<Ndim>& h_points,
-                  const PointsDevice<Ndim, TDev>& d_points) {
-    alpaka::onHost::memcpy(
-        queue,
-        alpaka::makeView(dev_host.getDevice(),h_points.m_view.cluster_index, h_points.size()),
-        alpaka::makeView(queue.getDevice(), d_points.m_view.cluster_index, h_points.size()));
-    h_points.mark_clustered();
-  }
-  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  void copyToDevice(TQueue& queue,
-                    PointsDevice<Ndim, TDev>& d_points,
-                    const PointsHost<Ndim>& h_points) {
-    // TODO: copy each coordinate column separately
-    alpaka::onHost::memcpy(
-        queue,
-        alpaka::makeView(queue.getDevice(), d_points.m_view.coords[0], Ndim * h_points.size()),
-        alpaka::makeView(h_points.m_view.coords[0], Ndim * h_points.size()));
-    alpaka::onHost::memcpy(queue,
-                   alpaka::makeView(queue.getDevice(), d_points.m_view.weight, h_points.size()),
-                   alpaka::makeView(h_points.m_view.weight, h_points.size()));
-  }
 
 }  // namespace clue

@@ -22,6 +22,9 @@ namespace clue::detail {
                    const PointsHost<Ndim>& points,
                    int points_per_tile,
                    const std::array<uint8_t, Ndim>& wrapped_coordinates) {
+    for (uint32_t i=0;i<Ndim;i++) {
+      std::cout<<static_cast<unsigned>(wrapped_coordinates[i])<<std::flush<<" "<<"\n";
+    }
     // TODO: reconsider the way that we compute the number of tiles
     auto ntiles =
         static_cast<int32_t>(std::ceil(points.size() / static_cast<float>(points_per_tile)));
@@ -39,18 +42,21 @@ namespace clue::detail {
       tiles->reset(points.size(), ntiles, n_per_dim);
     }
 
-    auto min_max = clue::make_host_buffer<internal::CoordinateExtremes<Ndim>>(queue);
-    auto tile_sizes = clue::make_host_buffer<float[Ndim]>(queue);
-    detail::compute_tile_size(min_max.data(), tile_sizes.data(), points, n_per_dim);
+    auto min_max = make_host_buffer<internal::CoordinateExtremes<Ndim>>();
+    auto tile_sizes = make_host_buffer<float>(Ndim);
+    detail::compute_tile_size(min_max.data(), tile_sizes, points, n_per_dim);
+    alpaka::onHost::memcpy(queue, tiles->m_minmax, min_max);
+    alpaka::onHost::memcpy(queue, tiles->m_tilesizes, tile_sizes);
+    auto view=alpaka::makeView(wrapped_coordinates);
 
-    alpaka::memcpy(queue, tiles->minMax(), min_max);
-    alpaka::memcpy(queue, tiles->tileSize(), tile_sizes);
-    alpaka::memcpy(queue, tiles->wrapped(), clue::make_host_view(wrapped_coordinates.data(), Ndim));
+    auto &dst = tiles->m_wrapped;
+    alpaka::onHost::memcpy(queue, dst, view,alpaka::Vec<uint8_t,1>{Ndim});
+    alpaka::onHost::wait(queue);
   }
 
   template <concepts::Queue TQueue,
             std::size_t Ndim,
-            alpaka::onHost::concepts::Device TDev = decltype(alpaka::getDev(std::declval<TQueue>()))>
+            alpaka::onHost::concepts::Device TDev = decltype(std::declval<TQueue>().getDevice())>
   void setup_tiles(TQueue& queue,
                    std::optional<internal::Tiles<Ndim, TDev>>& tiles,
                    const PointsDevice<Ndim, TDev>& points,
@@ -72,13 +78,13 @@ namespace clue::detail {
       tiles->reset(points.size(), ntiles, n_per_dim);
     }
 
-    auto min_max = clue::make_host_buffer<internal::CoordinateExtremes<Ndim>>(queue);
-    auto tile_sizes = clue::make_host_buffer<float[Ndim]>(queue);
+    auto min_max = make_host_buffer<internal::CoordinateExtremes<Ndim>>();
+    auto tile_sizes = make_host_buffer<float>(Ndim);
     detail::compute_tile_size(min_max.data(), tile_sizes.data(), points, n_per_dim);
 
-    alpaka::memcpy(queue, tiles->minMax(), min_max);
-    alpaka::memcpy(queue, tiles->tileSize(), tile_sizes);
-    alpaka::memcpy(queue, tiles->wrapped(), clue::make_host_view(wrapped_coordinates.data(), Ndim));
+    alpaka::onHost::memcpy(queue, tiles->minMax(), min_max);
+    alpaka::onHost::memcpy(queue, tiles->tileSize(), tile_sizes);
+    alpaka::onHost::memcpy(queue, tiles->wrapped(), alpaka::View(wrapped_coordinates.data(), Ndim));
   }
 
 }  // namespace clue::detail

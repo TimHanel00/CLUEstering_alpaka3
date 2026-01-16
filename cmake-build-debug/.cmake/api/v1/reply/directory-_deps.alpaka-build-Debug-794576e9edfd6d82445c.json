@@ -23,13 +23,7 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 100,
-				"parent" : 0
-			},
-			{
-				"command" : 0,
-				"file" : 0,
-				"line" : 118,
+				"line" : 102,
 				"parent" : 0
 			},
 			{
@@ -42,6 +36,12 @@
 				"command" : 0,
 				"file" : 0,
 				"line" : 124,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 127,
 				"parent" : 0
 			}
 		]
@@ -73,7 +73,8 @@
 				"cmake-build-debug/_deps/alpaka-src/cmake/alpakaHip.cmake",
 				"cmake-build-debug/_deps/alpaka-src/cmake/alpakaOneApi.cmake",
 				"cmake-build-debug/_deps/alpaka-src/cmake/buildDependencies.cmake",
-				"cmake-build-debug/_deps/alpaka-src/cmake/common.cmake"
+				"cmake-build-debug/_deps/alpaka-src/cmake/common.cmake",
+				"cmake-build-debug/_deps/alpaka-build/alpakaConfigVersion.cmake"
 			],
 			"type" : "file"
 		},

@@ -1,38 +1,38 @@
 
 #pragma once
-
-#include "CLUEstering/data_structures/AssociationMap.hpp"
 #include "CLUEstering/detail/concepts.hpp"
-#include "CLUEstering/internal/algorithm/reduce/reduce.hpp"
 #include "CLUEstering/internal/nostd/maximum.hpp"
 #include <limits>
 #include <span>
 
 namespace clue::internal {
 
-  template <clue::concepts::Queue TQueue>
+  template <typename TQueue>
   inline auto make_associator(TQueue& queue,
                               std::span<const int32_t> associations,
                               int32_t elements) {
-    const auto bins = clue::internal::algorithm::reduce(associations.begin(),
-                                                        associations.end(),
-                                                        std::numeric_limits<int32_t>::lowest(),
-                                                        clue::nostd::maximum<int32_t>{}) +
-                      1;
-    clue::AssociationMap<ALPAKA_TYPEOF(queue.getDevice())> map(elements, bins, queue);
-    map.fill(elements, associations, queue);
+    alpaka::onHost::SharedBuffer compute_buffer_out = alpaka::onHost::allocHost<int32_t>( Vec1D{1});
+    alpaka::onHost::allocLikeDeferred(queue,compute_buffer_out);
+    alpaka::onHost::memset(queue,compute_buffer_out,std::numeric_limits<int32_t>::lowest());
+
+    auto in_buf_d=alpaka::onHost::allocLikeDeferred(queue, associations);
+
+    alpaka::onHost::memcpy(queue, in_buf_d, associations);
+    const auto bins = alpaka::onHost::reduce(queue,DevicePool::exec(),std::numeric_limits<int32_t>::lowest(),compute_buffer_out,alpaka::math::max,in_buf_d) + 1;
+
+    DevAssociationMap map(queue,elements, bins);
+    map.fill(queue,elements, associations);
     alpaka::onHost::wait(queue);
     return map;
   }
-  template<typename T_Host>
-  inline decltype(auto) make_associator(T_Host host_dev,std::span<const int32_t> associations, int32_t elements){
+  inline auto make_associator(std::span<const int32_t> associations, int32_t elements) -> decltype(auto){
     const auto bins = std::reduce(associations.begin(),
                                   associations.end(),
                                   std::numeric_limits<int32_t>::lowest(),
-                                  clue::nostd::maximum<int32_t>{}) +
+                                  ::clue::nostd::maximum<int32_t>{}) +
 
                       1;
-    clue::AssociationMap<T_Host> map(elements, bins);
+    HostAssociationMap map(elements, bins);
     map.fill(associations);
     return map;
   }

@@ -10,11 +10,17 @@
 #include <alpaka/alpaka.hpp>
 
 namespace clue {
-
   /// @brief Get an alpaka queue created from a corresponding device
-  template <typename T_Device>
+  template <std::integral T_Id,alpaka::concepts::QueueKind T_Kind=alpaka::queueKind::NonBlocking>
+  inline auto get_queue(T_Id Id,T_Kind kind=T_Kind{}) {
+    static auto queue=DevicePool::deviceAt(Id).makeQueue(kind);
+    return queue;
+  }
+  /// @brief Get an alpaka queue created from a corresponding device
+  template <alpaka::onHost::concepts::Device T_Device>
   inline auto get_queue(T_Device const &device) {
-    return device.makeQueue();
+
+    return get_queue(DevicePool::indexOf(device));
   }
 
 }  // namespace clue

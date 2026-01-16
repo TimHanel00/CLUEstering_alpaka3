@@ -27,7 +27,7 @@ set_property(GLOBAL PROPERTY _CMAKE_FindGit_GIT_EXECUTABLE_VERSION
 
 include(ExternalProject)
 ExternalProject_Add(alpaka-populate
-                     "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/alpaka-group/alpaka3.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "f5fd268184068398ec4f1eb30dbba077b7fabd02"
+                     "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/alpaka-group/alpaka3.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "e23ec28541f4ebfc27b3a69f1e0de5ab0c1e9414"
                     SOURCE_DIR          "/home/tim/hzdr/workspace/CLUEport/cmake-build-debug/_deps/alpaka-src"
                     BINARY_DIR          "/home/tim/hzdr/workspace/CLUEport/cmake-build-debug/_deps/alpaka-build"
                     CONFIGURE_COMMAND   ""

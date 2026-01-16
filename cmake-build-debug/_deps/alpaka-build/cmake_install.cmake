@@ -55,6 +55,7 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT
     "/home/tim/hzdr/workspace/CLUEport/cmake-build-debug/_deps/alpaka-src/cmake/alpakaOneApi.cmake"
     "/home/tim/hzdr/workspace/CLUEport/cmake-build-debug/_deps/alpaka-src/cmake/buildDependencies.cmake"
     "/home/tim/hzdr/workspace/CLUEport/cmake-build-debug/_deps/alpaka-src/cmake/common.cmake"
+    "/home/tim/hzdr/workspace/CLUEport/cmake-build-debug/_deps/alpaka-build/alpakaConfigVersion.cmake"
     )
 endif()
 

@@ -52,13 +52,13 @@ endif()
 
 execute_process(
   COMMAND "/usr/bin/git"
-          checkout "f5fd268184068398ec4f1eb30dbba077b7fabd02" --
+          checkout "e23ec28541f4ebfc27b3a69f1e0de5ab0c1e9414" --
   WORKING_DIRECTORY "/home/tim/hzdr/workspace/CLUEport/cmake-build-debug/_deps/alpaka-src"
   RESULT_VARIABLE error_code
   ${maybe_show_command}
 )
 if(error_code)
-  message(FATAL_ERROR "Failed to checkout tag: 'f5fd268184068398ec4f1eb30dbba077b7fabd02'")
+  message(FATAL_ERROR "Failed to checkout tag: 'e23ec28541f4ebfc27b3a69f1e0de5ab0c1e9414'")
 endif()
 
 set(init_submodules TRUE)

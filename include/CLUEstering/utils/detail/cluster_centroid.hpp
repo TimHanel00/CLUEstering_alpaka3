@@ -12,7 +12,7 @@
 namespace clue {
 
   template <std::size_t Ndim>
-  inline Centroid<Ndim> cluster_centroid(const clue::PointsHost<Ndim>& points,
+  inline Centroid<Ndim> cluster_centroid(const PointsHost<Ndim>& points,
                                          std::size_t cluster_id) {
     assert(points.clustered());
     auto cluster_ids = points.clusterIndexes();
@@ -20,7 +20,7 @@ namespace clue {
     // TODO: add error handling
     Centroid<Ndim> centroid;
     auto size = clusters.count(cluster_id);
-    for (auto dim = 0u; dim < Ndim; ++dim) {
+    for (auto dim = 0U; dim < Ndim; ++dim) {
       auto coords = points.coords(dim);
       std::for_each_n(nostd::zip(coords.begin(), cluster_ids.begin()),
                       points.size(),
@@ -38,7 +38,7 @@ namespace clue {
   }
 
   template <std::size_t Ndim>
-  inline Centroids<Ndim> cluster_centroids(const clue::PointsHost<Ndim>& points) {
+  inline Centroids<Ndim> cluster_centroids(const PointsHost<Ndim>& points) {
     assert(points.clustered());
     auto cluster_ids = points.clusterIndexes();
     auto clusters = get_clusters(points);

@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "cached_buf_alloc.hpp"
+
 #include <alpaka/alpaka.hpp>
 
 namespace clue {
@@ -11,7 +13,7 @@ namespace clue {
   //   - Caching:       (device and host) caching allocator
   enum class AllocatorPolicy { Synchronous = 0, Asynchronous = 1, Caching = 2 };
 
-  template <typename TDev>
+  template <alpaka::onHost::concepts::Device TDev>
   constexpr inline AllocatorPolicy allocator_policy = AllocatorPolicy::Synchronous;
 
 #if defined ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED || defined ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLED
@@ -57,5 +59,20 @@ namespace clue {
   constexpr inline AllocatorPolicy allocator_policy<alpaka::DevGpuSyclIntel> =
       AllocatorPolicy::Synchronous;
 #endif
+  template<typename T_Type,typename T_Device, concepts::Queue T_Queue>
+  auto alloc(T_Device const &device,T_Queue const& queue,
+        alpaka::concepts::VectorOrScalar auto const& extents) {
+    using T_Dev=DevType<T_Queue>;
+    if constexpr (allocator_policy<T_Dev> == AllocatorPolicy::Synchronous) {
+      return alpaka::onHost::alloc<T_Type>(queue.getDevice(),extents);
+    }else {
+      if constexpr (allocator_policy<T_Dev> == AllocatorPolicy::Asynchronous) {
 
+        return alpaka::onHost::allocDeferred<T_Type>(queue,extents);
+      }else {
+        return allocCachedBuf<T_Type>(device,queue,extents);
+
+      }
+    }
+  }
 }  // namespace clue

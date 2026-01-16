@@ -82,11 +82,13 @@ namespace clue::internal {
     }
 
     ALPAKA_FN_ACC inline constexpr auto operator[](int32_t globalBinId) {
-      const auto size = offsets[globalBinId + 1] - offsets[globalBinId];
-      const auto offset = offsets[globalBinId];
-      int32_t* buf_ptr = indexes + offset;
-      return std::span<int32_t>{buf_ptr, static_cast<std::size_t>(size)};
+      const auto offset0 = offsets[globalBinId];
+      const auto offset1 = offsets[globalBinId + 1];
+
+      int32_t* buf_ptr = indexes + offset0;
+      return std::span{buf_ptr, static_cast<size_t>(offset1 - offset0)};
     }
+
 
     ALPAKA_FN_ACC inline constexpr float normalizeCoordinate(float coord, int dim) const {
       const float range = minmax->range(dim);

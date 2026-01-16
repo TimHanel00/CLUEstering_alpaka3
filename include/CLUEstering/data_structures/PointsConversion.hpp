@@ -16,51 +16,45 @@ namespace clue {
   ///
   /// @tparam TQueue The type of the queue for the device operations
   /// @tparam Ndim The number of dimensions of the points
-  /// @tparam TDev The type of device that the points are allocated on
   /// @param queue The queue used for the device operations
   /// @param h_points The points allocated on the host, where the clustering results will be saved
   /// @param d_points The points allocated on the device, where the clustering has been run
-  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
+  template <concepts::Queue TQueue, std::size_t Ndim>
   void copyToHost(TQueue& queue,
                   PointsHost<Ndim>& h_points,
-                  const PointsDevice<Ndim, TDev>& d_points);
+                  const PointsDevice<Ndim, DevType<TQueue>>& d_points);
 
   /// @brief Copies the results of the clustering from the device points to
   /// the host points
   ///
   /// @tparam TQueue The type of the queue for the device operations
   /// @tparam Ndim The number of dimensions of the points
-  /// @tparam TDev The type of device that the points are allocated on
   /// @param queue The queue used for the device operations
-  /// @param h_points The points allocated on the host, where the clustering results will be saved
   /// @param d_points The points allocated on the device, where the clustering has been run
-  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  auto copyToHost(TQueue& queue, const PointsDevice<Ndim, TDev>& d_points);
+  template <concepts::Queue TQueue, std::size_t Ndim>
+  auto copyToHost(TQueue& queue, const PointsDevice<Ndim, DevType<TQueue>>& d_points);
 
   /// @brief Copies the coordinates and weights of the points from the host to the device
   ///
   /// @tparam TQueue The type of the queue for the device operations
   /// @tparam Ndim The number of dimensions of the points
-  /// @tparam TDev The type of device that the points are allocated on
   /// @param queue The queue used for the device operations
   /// @param d_points The empty points allocated on the device
   /// @param h_points The points allocated on the host, containing the points' coordinates
   /// and weights
-  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
+  template <concepts::Queue TQueue, std::size_t Ndim>
   void copyToDevice(TQueue& queue,
-                    PointsDevice<Ndim, TDev>& d_points,
+                    PointsDevice<Ndim, DevType<TQueue>>& d_points,
                     const PointsHost<Ndim>& h_points);
 
   /// @brief Copies the coordinates and weights of the points from the host to the device
   ///
   /// @tparam TQueue The type of the queue for the device operations
   /// @tparam Ndim The number of dimensions of the points
-  /// @tparam TDev The type of device that the points are allocated on
   /// @param queue The queue used for the device operations
-  /// @param d_points The empty points allocated on the device
   /// @param h_points The points allocated on the host, containing the points' coordinates
   /// and weights
-  template <concepts::Queue TQueue, std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
+  template <concepts::Queue TQueue, std::size_t Ndim>
   auto copyToDevice(TQueue& queue, const PointsHost<Ndim>& h_points);
 
 }  // namespace clue

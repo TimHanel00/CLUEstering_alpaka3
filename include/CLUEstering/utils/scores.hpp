@@ -16,7 +16,7 @@ namespace clue {
   /// @return The silhouette score of the specified point
   /// @note This function currently only works for points with non-periodic coordinates.
   template <std::size_t Ndim>
-  auto silhouette(const clue::PointsHost<Ndim>& points, std::size_t point);
+  auto silhouette(const PointsHost<Ndim>& points, std::size_t point);
 
   /// @brief Compute the average silhouette score for the entire dataset.
   ///
@@ -25,7 +25,7 @@ namespace clue {
   /// @return The average silhouette score of the dataset
   /// @note This function currently only works for points with non-periodic coordinates.
   template <std::size_t Ndim>
-  auto silhouette(const clue::PointsHost<Ndim>& points);
+  auto silhouette(const PointsHost<Ndim>& points);
 
 }  // namespace clue
 

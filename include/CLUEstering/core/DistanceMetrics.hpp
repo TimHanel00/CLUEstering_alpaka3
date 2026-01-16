@@ -6,7 +6,6 @@
 
 #include "CLUEstering/internal/meta/accumulate.hpp"
 #include "CLUEstering/internal/meta/maximum.hpp"
-#include "CLUEstering/internal/math/math.hpp"
 #include <alpaka/alpaka.hpp>
 #include <array>
 #include <cstddef>
@@ -48,7 +47,7 @@ namespace clue {
                                                         const Point<Ndim>& rhs) const {
       const auto distance2 = meta::accumulate<Ndim>(
           [&]<std::size_t Dim>() { return (lhs[Dim] - rhs[Dim]) * (lhs[Dim] - rhs[Dim]); });
-      return math::sqrt(distance2);
+      return alpaka::math::sqrt(distance2);
     }
   };
 
@@ -93,7 +92,7 @@ namespace clue {
       const auto distance2 = meta::accumulate<Ndim>([&]<std::size_t Dim>() {
         return m_weights[Dim] * (lhs[Dim] - rhs[Dim]) * (lhs[Dim] - rhs[Dim]);
       });
-      return math::sqrt(distance2);
+      return alpaka::math::sqrt(distance2);
     }
   };
 
@@ -134,11 +133,11 @@ namespace clue {
     ALPAKA_FN_HOST_ACC constexpr inline auto operator()(const Point<Ndim>& lhs,
                                                         const Point<Ndim>& rhs) const {
       const auto distance2 = meta::accumulate<Ndim>([&]<std::size_t Dim>() {
-        const auto diff = math::fabs(lhs[Dim] - rhs[Dim]);
-        const auto periodic_diff = math::min(diff, m_periods[Dim] - diff);
+        const auto diff = alpaka::math::abs(lhs[Dim] - rhs[Dim]);
+        const auto periodic_diff = alpaka::math::min(diff, m_periods[Dim] - diff);
         return periodic_diff * periodic_diff;
       });
-      return math::sqrt(distance2);
+      return alpaka::math::sqrt(distance2);
     }
   };
 
@@ -160,7 +159,7 @@ namespace clue {
     ALPAKA_FN_HOST_ACC constexpr inline auto operator()(const Point<Ndim>& lhs,
                                                         const Point<Ndim>& rhs) const {
       return meta::accumulate<Ndim>(
-          [&]<std::size_t Dim>() { return math::fabs(lhs[Dim] - rhs[Dim]); });
+          [&]<std::size_t Dim>() { return alpaka::math::abs(lhs[Dim] - rhs[Dim]); });
     }
   };
 
@@ -182,7 +181,7 @@ namespace clue {
     ALPAKA_FN_HOST_ACC constexpr inline auto operator()(const Point<Ndim>& lhs,
                                                         const Point<Ndim>& rhs) const {
       return meta::maximum<Ndim>(
-          [&]<std::size_t Dim>() { return math::fabs(lhs[Dim] - rhs[Dim]); });
+          [&]<std::size_t Dim>() { return alpaka::math::abs(lhs[Dim] - rhs[Dim]); });
     }
   };
 
@@ -225,7 +224,7 @@ namespace clue {
     ALPAKA_FN_HOST_ACC constexpr inline auto operator()(const Point<Ndim>& lhs,
                                                         const Point<Ndim>& rhs) const {
       return meta::maximum<Ndim>(
-          [&]<std::size_t Dim>() { return m_weights[Dim] * math::fabs(lhs[Dim] - rhs[Dim]); });
+          [&]<std::size_t Dim>() { return m_weights[Dim] * alpaka::math::abs(lhs[Dim] - rhs[Dim]); });
     }
   };
 

@@ -2,7 +2,6 @@
 #pragma once
 
 #include "CLUEstering/core/ConvolutionalKernel.hpp"
-#include "CLUEstering/internal/math/math.hpp"
 
 #include <alpaka/alpaka.hpp>
 

@@ -29,7 +29,15 @@ namespace clue {
       }
       return ((Ndim + 2) * sizeof(float) + 3 * sizeof(int)) * n_points;
     }
+    template <concepts::Queue TQueue, std::size_t Ndim>
+    void copyToHost(TQueue& queue,
+                PointsHost<Ndim>& h_points,
+                const PointsDevice<Ndim, DevType<TQueue>>& d_points);
 
+    template <concepts::Queue TQueue, std::size_t Ndim>
+    void copyToDevice(TQueue& queue,
+                      PointsDevice<Ndim, DevType<TQueue>>& d_points,
+                      const PointsHost<Ndim>& h_points);
     template <std::size_t Ndim>
     inline void partitionSoAView(PointsView<Ndim>& view, std::byte* buffer, int32_t n_points) {
       meta::apply<Ndim>([&]<std::size_t Dim>() {
@@ -65,7 +73,7 @@ namespace clue {
                                  std::span<float> weights,
                                  std::span<int> output) {
       meta::apply<Ndim>([&]<std::size_t Dim>() {
-        view.coords[Dim] = reinterpret_cast<float*>(coordinates.data() + Dim * n_points);
+        view.coords[Dim] = coordinates.data() + Dim * n_points;
       });
       view.weight = weights.data();
       view.cluster_index = output.data();
@@ -148,9 +156,8 @@ namespace clue {
   }  // namespace soa::device
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  template <concepts::Queue TQueue>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TQueue& queue, int32_t n_points)
-      : m_buffer{make_device_buffer<std::byte[]>(queue,
+  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device, int32_t n_points)
+      : m_buffer{make_device_buffer<std::byte>(device,
                                                  soa::device::computeSoASize<Ndim>(n_points))},
         m_view{},
         m_size{n_points} {
@@ -158,36 +165,33 @@ namespace clue {
   }
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  template <concepts::Queue TQueue>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TQueue& queue,
+  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
                                                 int32_t n_points,
                                                 std::span<std::byte> buffer)
-      : m_buffer{make_device_buffer<std::byte[]>(queue, 3 * n_points * sizeof(float))},
+      : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), buffer.data(), n_points);
   }
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  template <concepts::Queue TQueue>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TQueue& queue,
+  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
                                                 int32_t n_points,
                                                 std::span<float> input,
                                                 std::span<int> output)
-      : m_buffer{make_device_buffer<std::byte[]>(queue, 3 * n_points * sizeof(float))},
+      : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, input, output);
   }
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  template <concepts::Queue TQueue>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TQueue& queue,
+  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
                                                 int32_t n_points,
                                                 std::span<float> coordinates,
                                                 std::span<float> weights,
                                                 std::span<int> output)
-      : m_buffer{make_device_buffer<std::byte[]>(queue, 3 * n_points * sizeof(float))},
+      : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(
@@ -195,22 +199,20 @@ namespace clue {
   }
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  template <concepts::Queue TQueue>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TQueue& queue,
+  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
                                                 int32_t n_points,
                                                 float* input,
                                                 int* output)
-      : m_buffer{make_device_buffer<std::byte[]>(queue, 3 * n_points * sizeof(float))},
+      : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, input, output);
   }
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  template <concepts::Queue TQueue>
   inline PointsDevice<Ndim, TDev>::PointsDevice(
-      TQueue& queue, int32_t n_points, float* coordinates, float* weights, int* output)
-      : m_buffer{make_device_buffer<std::byte[]>(queue, 3 * n_points * sizeof(float))},
+      TDev& device, int32_t n_points, float* coordinates, float* weights, int* output)
+      : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(
@@ -218,12 +220,12 @@ namespace clue {
   }
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  template <concepts::Queue TQueue, concepts::Pointer... TBuffers>
+  template <concepts::Pointer... TBuffers>
     requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TQueue& queue,
+  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
                                                 int32_t n_points,
                                                 TBuffers... buffers)
-      : m_buffer{make_device_buffer<std::byte[]>(queue, 3 * n_points * sizeof(float))},
+      : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, buffers...);

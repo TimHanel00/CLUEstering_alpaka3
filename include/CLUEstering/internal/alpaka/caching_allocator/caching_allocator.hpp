@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "allocator_policy.hpp"
+
 #include <cassert>
 #include <exception>
 #include <iomanip>
@@ -39,7 +41,7 @@ namespace clue {
     }
 
     // format a memory size in B/kB/MB/GB
-    inline std::string as_bytes(size_t value) {
+    inline auto as_bytes(size_t value) -> std::string {
       if (value == std::numeric_limits<size_t>::max()) {
         return "unlimited";
       } else if (value >= (1 << 30) and value % (1 << 30) == 0) {
@@ -94,8 +96,8 @@ namespace clue {
     using Buffer = alpaka::onHost::SharedBuffer<ALPAKA_TYPEOF(alpaka::getApi(std::declval<TQueue>())), std::byte, alpaka_common::Vec1D>;
 
     // The "memory device" type can either be the same as the "synchronisation device" type, or be the host CPU.
-    static_assert(std::is_same_v<Device, alpaka::Dev<Queue>> or
-                      std::is_same_v<Device, alpaka::deviceKind::Cpu>,
+    static_assert(std::is_same_v<Device, ALPAKA_TYPEOF(std::declval<TQueue>().getDevice())> or
+                      std::is_same_v<ALPAKA_TYPEOF(alpaka::getApi(std::declval<Device>())), alpaka::api::Host>,
                   "The \"memory device\" type can either be the same as the "
                   "\"synchronisation device\" "
                   "type, or be the "
@@ -109,6 +111,8 @@ namespace clue {
 
     explicit CachingAllocator(
         Device const& device,
+        TQueue const & queue, //queue for type deduction
+
         unsigned int binGrowth,  // bin growth factor;
         unsigned int minBin,     // smallest bin, corresponds to binGrowth^minBin bytes;
                                  // smaller allocations are rounded to this value;
@@ -143,7 +147,7 @@ namespace clue {
           out << "    " << std::right << std::setw(12) << detail::as_bytes(binSize) << '\n';
         }
         out << "  maximum amount of cached memory: " << detail::as_bytes(maxCachedBytes_);
-        std::cout << out.str() << std::endl;
+        std::cout << out.str() << '\n';
       }
     }
 
@@ -184,15 +188,15 @@ namespace clue {
     void free(void* ptr) {
       std::scoped_lock lock(mutex_);
 
-      auto iBlock = liveBlocks_.find(ptr);
-      if (iBlock == liveBlocks_.end()) {
+      auto i_block = liveBlocks_.find(ptr);
+      if (i_block == liveBlocks_.end()) {
         std::stringstream ss;
         ss << "Trying to free a non-live block at " << ptr;
         throw std::runtime_error(ss.str());
       }
       // remove the block from the list of live blocks
-      BlockDescriptor block = std::move(iBlock->second);
-      liveBlocks_.erase(iBlock);
+      BlockDescriptor block = std::move(i_block->second);
+      liveBlocks_.erase(i_block);
       cachedBytes_.live -= block.bytes;
       cachedBytes_.requested -= block.requested;
 
@@ -246,14 +250,15 @@ namespace clue {
     // return the maximum amount of memory that should be cached on this device
     size_t cacheSize(size_t maxCachedBytes, double maxCachedFraction) const {
       // note that getMemBytes() returns 0 if the platform does not support querying the device memory
-      size_t totalMemory = alpaka::getMemBytes(device_);
-      size_t memoryFraction = static_cast<size_t>(maxCachedFraction * totalMemory);
+      //@TODO get the correct number of memory bytes via device api (set to 1GB for now)
+      size_t total_memory = device_.getDeviceProperties().globalMemCapacityBytes;
+      size_t memory_fraction = static_cast<size_t>(maxCachedFraction * total_memory);
       size_t size = std::numeric_limits<size_t>::max();
       if (maxCachedBytes > 0 and maxCachedBytes < size) {
         size = maxCachedBytes;
       }
-      if (memoryFraction > 0 and memoryFraction < size) {
-        size = memoryFraction;
+      if (memory_fraction > 0 and memory_fraction < size) {
+        size = memory_fraction;
       }
       return size;
     }
@@ -285,7 +290,7 @@ namespace clue {
       const auto [begin, end] = cachedBlocks_.equal_range(block.bin);
       for (auto iBlock = begin; iBlock != end; ++iBlock) {
         if ((reuseSameQueueAllocations_ and (*block.queue == *(iBlock->second.queue))) or
-            alpaka::isComplete(*(iBlock->second.event))) {
+            iBlock->second.event->isComplete()) {
           // associate the cached buffer to the new queue
           auto queue = std::move(*(block.queue));
           // TODO cache (or remove) the debug information and use std::move()
@@ -293,8 +298,8 @@ namespace clue {
           block.queue = std::move(queue);
 
           // if the new queue is on different device than the old event, create a new event
-          if (block.device() != alpaka::getDev(*(block.event))) {
-            block.event = Event{block.device()};
+          if (block.device() != block.event->getDevice()) {
+            block.event = block.device().makeEvent();
           }
 
           // insert the cached block into the live blocks
@@ -308,13 +313,13 @@ namespace clue {
 
           if (debug_) {
             std::ostringstream out;
-            out << "\t" << deviceType_ << " " << alpaka::getName(device_)
+            out << "\t" << deviceType_ << " " << alpaka::onHost::getName(device_)
                 << " reused cached block at " << block.buffer->data() << " (" << block.bytes
                 << " bytes) for queue " << block.queue->m_spQueueImpl.get() << ", event "
                 << block.event->m_spEventImpl.get() << " (previously associated with stream "
                 << iBlock->second.queue->m_spQueueImpl.get() << " , event "
                 << iBlock->second.event->m_spEventImpl.get() << ")." << std::endl;
-            std::cout << out.str() << std::endl;
+            std::cout << out.str() << '\n';
           }
 
           // remove the reused block from the list of cached blocks
@@ -330,18 +335,17 @@ namespace clue {
       if constexpr (std::is_same_v<Device, ALPAKA_TYPEOF(queue.getDevice())>) {
         // allocate device memory
         return alpaka::onHost::alloc<std::byte>(queue, bytes);
-      } else if constexpr (std::is_same_v<ALPAKA_TYPEOF(queue.getDevice().getDeviceKind()),alpaka::deviceKind::Cpu>) {
+      } else if constexpr (std::is_same_v<ALPAKA_TYPEOF(queue.getApi()), alpaka::api::Host>) {
         // allocate pinned host memory accessible by the queue's platform
-        alpaka::onHost::allocUnified<>()
-        return alpaka::onHost::allocUnified<>()<std::byte>(queue,bytes);
+        return alpaka::onHost::allocMapped<std::byte>(queue, bytes);
       } else {
         // unsupported combination
-        static_assert(
-            std::is_same_v<Device, alpaka::Dev<Queue>> or std::is_same_v<Device, alpaka::DevCpu>,
-            "The \"memory device\" type can either be the same as the "
-            "\"synchronisation device\" "
-            "type, or be "
-            "the host CPU.");
+        static_assert(std::is_same_v<Device, ALPAKA_TYPEOF(queue.getDevice())> or
+                          std::is_same_v<ALPAKA_TYPEOF(queue.getApi()), alpaka::api::Host>,
+                      "The \"memory device\" type can either be the same as the "
+                      "\"synchronisation device\" "
+                      "type, or be "
+                      "the host CPU.");
       }
     }
 
@@ -352,7 +356,7 @@ namespace clue {
         // the allocation attempt failed: free all cached blocks on the device and retry
         if (debug_) {
           std::ostringstream out;
-          out << "\t" << deviceType_ << " " << alpaka::getName(device_) << " failed to allocate "
+          out << "\t" << deviceType_ << " " << alpaka::onHost::demangledName(device_) << " failed to allocate "
               << block.bytes << " bytes for queue " << block.queue->m_spQueueImpl.get()
               << ", retrying after freeing cached allocations" << std::endl;
           std::cout << out.str() << std::endl;
@@ -377,7 +381,7 @@ namespace clue {
 
       if (debug_) {
         std::ostringstream out;
-        out << "\t" << deviceType_ << " " << alpaka::getName(device_) << " allocated new block at "
+        out << "\t" << deviceType_ << " " << alpaka::onHost::demangledName(device_) << " allocated new block at "
             << block.buffer->data() << " (" << block.bytes << " bytes associated with queue "
             << block.queue->m_spQueueImpl.get() << ", event " << block.event->m_spEventImpl.get()
             << "." << std::endl;
@@ -394,7 +398,7 @@ namespace clue {
 
         if (debug_) {
           std::ostringstream out;
-          out << "\t" << deviceType_ << " " << alpaka::getName(device_) << " freed "
+          out << "\t" << deviceType_ << " " << alpaka::onHost::demangledName(device_) << " freed "
               << iBlock->second.bytes << " bytes.\n\t\t  " << (cachedBlocks_.size() - 1)
               << " available blocks cached (" << cachedBytes_.free << " bytes), "
               << liveBlocks_.size() << " live blocks (" << cachedBytes_.live

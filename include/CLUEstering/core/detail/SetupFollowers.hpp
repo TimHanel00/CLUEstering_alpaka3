@@ -12,7 +12,8 @@ namespace clue::detail {
   template <typename TQueue>
   void setup_followers(TQueue& queue, auto& followers, int32_t n_points) {
     if (!followers.has_value()) {
-      followers = ALPAKA_TYPEOF(followers)(n_points, queue);
+      followers.emplace(n_points, queue);
+
     }
 
     if (!(followers->extents() >= n_points)) {

@@ -10,7 +10,7 @@ if(NOT alpaka_FOUND)
   FetchContent_Declare(
           alpaka
           GIT_REPOSITORY https://github.com/alpaka-group/alpaka3.git
-          GIT_TAG f5fd268184068398ec4f1eb30dbba077b7fabd02
+          GIT_TAG e23ec28541f4ebfc27b3a69f1e0de5ab0c1e9414
   )
   FetchContent_MakeAvailable(alpaka)
 
