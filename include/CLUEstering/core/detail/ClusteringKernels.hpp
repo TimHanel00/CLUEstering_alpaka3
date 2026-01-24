@@ -9,7 +9,6 @@
 #include "CLUEstering/data_structures/internal/TilesView.hpp"
 #include "CLUEstering/data_structures/internal/VecArray.hpp"
 #include "CLUEstering/detail/make_array.hpp"
-#include "CLUEstering/internal/alpaka/work_division.hpp"
 
 #include <array>
 #include <cstdint>
@@ -265,10 +264,11 @@ namespace clue::detail {
           int temp_cluster_index = dev_points.cluster_index[idx_end_of_local_stack];
           local_stack[local_stack_size - 1] = -1;
           --local_stack_size;
+          // returns the span from the assocation map
           const auto& followers_ies = followers[idx_end_of_local_stack];
           const auto followers_size = followers_ies.size();
-          for (auto j = 0u; j != followers_size; ++j) {
-            int follower = followers_ies[j];
+          for (auto j = 0U; j != followers_size; ++j) {
+            int follower = followers_ies[j]; //confirmed wrong index (buffer overflow or garbage inside followers_ies
 
             dev_points.cluster_index[follower] = temp_cluster_index;
             local_stack[local_stack_size] = follower;
@@ -311,10 +311,8 @@ namespace clue::detail {
                                     std::size_t& seed_candidates,
                                     int32_t size) {
     auto device = queue.getDevice();
-    std::cout<<" number of seed candidates: "<<seed_candidates<<std::endl;
     auto d_seed_candidates = make_device_buffer<std::size_t>(device,Vec1D{1U});
-    std::cout<<" pointer name: "<<static_cast<void*>(d_seed_candidates.data())<<'\n';
-    alpaka::onHost::memset(queue, d_seed_candidates, 0u);
+    alpaka::onHost::memset(queue, d_seed_candidates, 0U);
     queue.enqueue(DevicePool::exec(),
                        thread_spec,
                        KernelCalculateNearestHigher{},
@@ -353,8 +351,8 @@ namespace clue::detail {
   template <concepts::Queue TQueue, std::size_t Ndim>
   inline void assignPointsToClusters(TQueue& queue,
                                      std::size_t block_size,
-                                     ::clue::internal::SeedArray<DevType<TQueue>>& seeds,
-                                     ::clue::FollowersView followers,
+                                     internal::SeedArray<DevType<TQueue>>& seeds,
+                                     FollowersView followers,
                                      PointsView<Ndim> dev_points) {
     const std::size_t grid_size = alpaka::divCeil(seeds.size(queue), block_size);
     const auto frame_spec = alpaka::onHost::FrameSpec{grid_size, block_size};

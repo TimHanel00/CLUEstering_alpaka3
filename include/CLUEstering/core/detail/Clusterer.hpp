@@ -137,10 +137,8 @@ inline void Clusterer<TQueue, Ndim>::make_clusters(
 
     const std::size_t grid_size = alpaka::divCeil(n_points, block_size);
     auto threadSpec = alpaka::onHost::FrameSpec{grid_size, block_size};
-    std::cout<<" break 1"<<'\n';
     detail::computeLocalDensity(
         queue, threadSpec, m_tiles->view(), dev_points.view(), kernel, m_dc, metric, n_points);
-    std::cout<<" break 2"<<'\n';
     auto seed_candidates = 0UL;
     detail::computeNearestHighers(queue,
                                        threadSpec,
@@ -150,9 +148,7 @@ inline void Clusterer<TQueue, Ndim>::make_clusters(
                                        metric,
                                        seed_candidates,
                                        n_points);
-    std::cout<<" break 3"<<'\n';
     detail::setup_seeds(queue, m_seeds, seed_candidates);
-    std::cout<<" break 4"<<'\n';
     detail::findClusterSeeds(queue,
                                   threadSpec,
                                   m_seeds.value(),
@@ -161,13 +157,10 @@ inline void Clusterer<TQueue, Ndim>::make_clusters(
                                   metric,
                                   m_rhoc,
                                   n_points);
-    std::cout<<" break 5"<<'\n';
 
     m_followers->template fill(queue, dev_points);
-    std::cout<<" break 6"<<'\n';
     detail::assignPointsToClusters(
         queue, block_size, m_seeds.value(), m_followers->view(), dev_points.view());
-    std::cout<<" break 7"<<'\n';
     copyToHost(queue, h_points, dev_points);
     h_points.mark_clustered();
     dev_points.mark_clustered();

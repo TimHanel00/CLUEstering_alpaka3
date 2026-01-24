@@ -1,71 +1,23 @@
 cmake_minimum_required(VERSION 3.10)
-
-project(BasicCLUEsteringExample)
+project(BasicCLUEsteringExample LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(NOT TARGET CLUEstering::CLUEstering)
-  find_package(CLUEstering REQUIRED)
-endif()
+#find_package(CLUEstering REQUIRED)
+#find_package(alpaka REQUIRED)
 
-if(NOT TARGET alpaka::alpaka)
-  find_package(alpaka REQUIRED)
-endif()
-if(alpaka_EXEC_CpuSerial)
-  add_executable(serial.out main.cpp)
-  target_compile_definitions(serial.out
-                             PRIVATE alpaka_SELECT_CpuSerial)
-  target_link_libraries(serial.out PRIVATE CLUEstering::CLUEstering
-                                           alpaka::alpaka)
-  alpaka_finalize(serial.out)
+# include the helper
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake")
+include(AddAlpakaExecutors)
 
-endif()
+add_alpaka_executor_binaries(
+        PREFIX basic
+        SOURCES main.cpp
+        LINK_LIBS CLUEstering::CLUEstering alpaka::alpaka
+        OUT_TARGETS created_binaries
+)
 
-if(alpaka_DEP_TBB)
-
-  if(NOT TARGET TBB::tbb)
-    find_package(TBB QUIET)
-    message(" TBB not found. Please install it if you want to use the tbb executor!")
-  else()
-    add_executable(tbb.out main.cpp)
-    target_compile_definitions(tbb.out PRIVATE alpaka_SELECT_TBB)
-    target_link_libraries(tbb.out PRIVATE CLUEstering::CLUEstering alpaka::alpaka
-            TBB::tbb)
-    alpaka_finalize(tbb.out)
-  endif()
-
-endif()
-
-if(alpaka_DEP_OMP)
-  find_package(OpenMP REQUIRED)
-  if(NOT TARGET OpenMP::OpenMP_CXX)
-    message(FATAL_ERROR "OpenMP not found. Please install it.")
-  endif()
-  add_executable(openmp.out main.cpp)
-  target_compile_definitions(openmp.out
-                             PRIVATE alpaka_SELECT_OMP)
-  target_link_libraries(openmp.out PRIVATE CLUEstering::CLUEstering
-                                           alpaka::alpaka OpenMP::OpenMP_CXX)
-  alpaka_finalize(openmp.out)
-endif()
-
-if(alpaka_DEP_CUDA)
-  include(CheckLanguage)
-  check_language(CUDA)
-  if(CMAKE_CUDA_COMPILER)
-    set_source_files_properties(main.cpp PROPERTIES LANGUAGE CUDA)
-    add_executable(cuda.out main.cpp)
-    target_link_libraries(cuda.out PRIVATE CLUEstering::CLUEstering
-                                           alpaka::alpaka)
-    target_compile_definitions(cuda.out PRIVATE alpaka_SELECT_CUDA)
-    target_compile_options(cuda.out PRIVATE --expt-relaxed-constexpr)
-    set_target_properties(cuda.out PROPERTIES CUDA_SEPARABLE_COMPILATION ON
-                                              CUDA_ARCHITECTURES native)
-    alpaka_finalize(cuda.out)
-  else()
-    message(FATAL_ERROR "CUDA not found. Please install it.")
-  endif()
-endif()
+message(STATUS "Created targets: ${created_bins}")
