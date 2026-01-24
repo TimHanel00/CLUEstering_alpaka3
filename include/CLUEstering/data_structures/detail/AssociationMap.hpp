@@ -5,7 +5,6 @@
 #include "CLUEstering/data_structures/AssociationMapView.hpp"
 #include "CLUEstering/detail/concepts.hpp"
 #include "CLUEstering/internal/alpaka/memory.hpp"
-#include "CLUEstering/internal/alpaka/work_division.hpp"
 #include "CLUEstering/internal/algorithm/scan/scan.hpp"
 
 #include <span>

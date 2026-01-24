@@ -11,8 +11,10 @@
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
+using TestApis = std::decay_t<decltype(allBackends(alpaka::enabledApis, alpaka::exec::enabledExecutors))>;
 
-TEST_CASE("Test binary association map") {
+DOCTEST_TYPED_TEST_CASE("Test binary association map",TestApis) {
+  using Api = TypeParam; //get APIs:
   const auto host = alpaka::getDevByIdx(alpaka::PlatformCpu{}, 0u);
   clue::Queue queue(host);
 

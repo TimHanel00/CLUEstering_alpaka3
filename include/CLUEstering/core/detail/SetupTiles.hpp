@@ -3,7 +3,6 @@
 
 #include "CLUEstering/core/detail/ComputeTiles.hpp"
 #include "CLUEstering/data_structures/PointsHost.hpp"
-#include "CLUEstering/data_structures/PointsDevice.hpp"
 #include "CLUEstering/data_structures/internal/Tiles.hpp"
 #include "CLUEstering/detail/concepts.hpp"
 #include <array>
@@ -22,9 +21,6 @@ namespace clue::detail {
                    const PointsHost<Ndim>& points,
                    int points_per_tile,
                    const std::array<uint8_t, Ndim>& wrapped_coordinates) {
-    for (uint32_t i=0;i<Ndim;i++) {
-      std::cout<<static_cast<unsigned>(wrapped_coordinates[i])<<std::flush<<" "<<"\n";
-    }
     // TODO: reconsider the way that we compute the number of tiles
     auto ntiles =
         static_cast<int32_t>(std::ceil(points.size() / static_cast<float>(points_per_tile)));

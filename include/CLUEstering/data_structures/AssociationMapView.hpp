@@ -51,10 +51,16 @@ namespace clue {
     /// @param key The key for which to get the associated values.
     /// @return A span containing the values associated with the given key.
     ALPAKA_FN_ACC auto operator[](size_t key) {
-      auto size = m_offsets[key + 1] - m_offsets[key];
-      auto* buf_ptr = m_indexes + m_offsets[key];
-      return std::span<int32_t>{buf_ptr, static_cast<std::size_t>(size)};
+      const int32_t off0 = m_offsets[key];
+      const int32_t off1 = m_offsets[key + 1];
+
+      const int32_t* begin = m_indexes + off0;
+
+
+
+      return std::span<const int32_t>{begin, static_cast<size_t>(off1 - off0)};
     }
+
     /// @brief Get the associated values for a given key.
     ///
     /// @param key The key for which to get the associated values.
@@ -62,6 +68,8 @@ namespace clue {
     ALPAKA_FN_ACC auto operator[](size_t key) const {
       auto size = m_offsets[key + 1] - m_offsets[key];
       auto* buf_ptr = m_indexes + m_offsets[key];
+      auto span=std::span<int32_t>{buf_ptr, static_cast<std::size_t>(size)};
+      auto idx=m_offsets[key];
       return std::span<const int32_t>{buf_ptr, static_cast<std::size_t>(size)};
     }
     /// @brief Get the number of associated values for a given key.

@@ -251,7 +251,7 @@ class HostAssociationMap : public detail::AssociationMapBase<alpaka::api::Host>
 
       auto scan_buffer = make_device_buffer<std::byte>(queue.getDevice(), Vec1D{scanBufferSize});
 
-      alpaka::onHost::exclusiveScan(
+      alpaka::onHost::inclusiveScan(
           queue,
           exec,
           scan_buffer,

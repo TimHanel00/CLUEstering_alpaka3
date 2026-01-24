@@ -1,110 +1,46 @@
-cmake_minimum_required(VERSION 3.16.0)
+cmake_minimum_required(VERSION 3.16)
+project(CLUE_Tests LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../cmake")
+include(TestSetup)
 
-string(
-  APPEND
-  CMAKE_CXX_FLAGS_DEBUG
-  " -DCLUE_DEBUG -D_GLIBCXX_ASSERTIONS -O0 -Wall -Wextra -Wpedantic -Wshadow -Wimplicit-fallthrough -Wextra-semi -Wold-style-cast -g -pg -fsanitize=address"
-)
-set(CMAKE_CXX_FLAGS_RELEASE
-    " -O2 -funroll-loops -funsafe-math-optimizations -ftree-vectorize -march=native"
-)
+#find_package(CLUEstering REQUIRED)
+#find_package(alpaka REQUIRED)
 
-find_package(Boost 1.74.0 REQUIRED COMPONENTS atomic)
+file(GLOB sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/*.cpp")
 
-include(FetchContent)
+foreach(source IN LISTS sources)
+  get_filename_component(test_name "${source}" NAME_WE)
 
-find_package(doctest 2.4.12)
-if(NOT doctest_FOUND)
-  FetchContent_Declare(
-    doctest
-    GIT_REPOSITORY https://github.com/doctest/doctest.git
-    GIT_TAG dev)
-  FetchContent_MakeAvailable(doctest)
-endif()
+  add_executable("${test_name}" "${source}")
 
-find_package(fmt 10.2.1)
-if(NOT fmt_FOUND)
-  FetchContent_Declare(
-    fmt
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG 10.2.1 # or another stable version
+  target_include_directories("${test_name}" PRIVATE
+          "${CMAKE_SOURCE_DIR}/../include"
+          "${doctest_SOURCE_DIR}/doctest"
   )
-  FetchContent_MakeAvailable(fmt)
-endif()
 
-option(COVERAGE "Enable code coverage" OFF)
+  target_link_libraries("${test_name}" PRIVATE
+          CLUEstering::CLUEstering
+          alpaka::alpaka
+          fmt::fmt
+  )
 
-enable_testing()
+  target_compile_definitions("${test_name}" PRIVATE
+          CLUE_ENABLE_CACHING_ALLOCATOR
+          TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../data"
+  )
+  alpaka_finalize(${test_name})
 
-add_subdirectory(cpu)
+  add_test(NAME "${test_name}" COMMAND "${test_name}")
 
-include(CheckLanguage)
-
-execute_process(
-  COMMAND nvidia-smi --query-gpu=name --format=csv,noheader
-  OUTPUT_VARIABLE GPU_LIST
-  ERROR_QUIET
-  RESULT_VARIABLE SMI_STATUS)
-
-if(SMI_STATUS EQUAL 0 AND NOT GPU_LIST STREQUAL "")
-  set(NVIDIA_GPU_PRESENT TRUE)
-else()
-  set(NVIDIA_GPU_PRESENT FALSE)
-endif()
-
-check_language(CUDA)
-if(CMAKE_CUDA_COMPILER AND NVIDIA_GPU_PRESENT)
-  add_subdirectory(cuda)
-endif()
-
-execute_process(
-  COMMAND rocm-smi --showproductname
-  OUTPUT_VARIABLE AMD_GPU_LIST
-  ERROR_QUIET
-  RESULT_VARIABLE SMI_STATUS)
-
-if(SMI_STATUS EQUAL 0 AND NOT AMD_GPU_LIST STREQUAL "")
-  set(AMD_GPU_PRESENT TRUE)
-else()
-  set(AMD_GPU_PRESENT FALSE)
-endif()
-
-check_language(HIP)
-if(CMAKE_HIP_COMPILER AND AMD_GPU_PRESENT)
-  add_subdirectory(hip)
-endif()
-
-set(_sycl_search_dirs ${SYCL_ROOT_DIR} /usr/lib /usr/local/lib
-                      /opt/intel/oneapi/compiler/latest/linux)
-find_program(
-  SYCL_COMPILER
-  NAMES icpx
-  HINTS ${_sycl_search_dirs}
-  PATH_SUFFIXES bin)
-find_path(
-  SYCL_INCLUDE_DIR
-  NAMES sycl/sycl.hpp
-  HINTS ${_sycl_search_dirs}
-  PATH_SUFFIXES include)
-find_path(
-  SYCL_LIB_DIR
-  NAMES libsycl.so
-  HINTS ${_sycl_search_dirs}
-  PATH_SUFFIXES lib)
-find_package(oneDPL)
-
-if(oneDPL_FOUND
-   AND SYCL_COMPILER
-   AND SYCL_INCLUDE_DIR
-   AND SYCL_LIB_DIR)
-  add_subdirectory(sycl)
-endif()
+  if(COVERAGE)
+    target_compile_options("${test_name}" PRIVATE -O0 -g --coverage)
+    target_link_options("${test_name}" PRIVATE --coverage)
+    target_compile_definitions("${test_name}" PRIVATE COVERAGE)
+  endif()
+endforeach()
