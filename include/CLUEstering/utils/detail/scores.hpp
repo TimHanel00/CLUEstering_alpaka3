@@ -29,7 +29,7 @@ namespace clue {
       return std::sqrt(dist);
     }
 
-    template <std::size_t Ndim,concepts::HostApi TDev>
+    template <std::size_t Ndim, concepts::HostApi TDev>
     inline auto silhouette(const AssociationMap<TDev>& clusters,
                            const PointsHost<Ndim>& points,
                            int point) {

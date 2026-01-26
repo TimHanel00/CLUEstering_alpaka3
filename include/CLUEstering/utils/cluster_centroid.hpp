@@ -25,8 +25,7 @@ namespace clue {
   /// @param cluster_id The ID of the cluster for which to compute the centroid
   /// @return The centroid of the specified cluster as an array of floats
   template <std::size_t Ndim>
-  inline Centroid<Ndim> cluster_centroid(const PointsHost<Ndim>& points,
-                                         std::size_t cluster_id);
+  inline Centroid<Ndim> cluster_centroid(const PointsHost<Ndim>& points, std::size_t cluster_id);
 
   /// @brief Compute the centroids of all clusters from the given Points
   ///

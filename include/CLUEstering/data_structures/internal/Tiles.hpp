@@ -6,7 +6,6 @@
 #include "CLUEstering/data_structures/internal/CoordinateExtremes.hpp"
 #include "CLUEstering/detail/concepts.hpp"
 #include "CLUEstering/detail/make_array.hpp"
-#include "CLUEstering/internal/alpaka/config.hpp"
 #include "CLUEstering/internal/alpaka/memory.hpp"
 #include "CLUEstering/detail/concepts.hpp"
 #include <cstddef>
@@ -22,10 +21,11 @@ namespace clue::internal {
   public:
     template <::clue::concepts::Queue TQueue>
     Tiles(TQueue& queue, int32_t n_points, int32_t n_tiles)
-        : m_assoc{static_cast<std::size_t>(n_points), static_cast<std::size_t>(n_tiles),queue},
-          m_minmax{make_device_buffer<CoordinateExtremes<Ndim>>(queue.getDevice(),alpaka::Vec<std::size_t,1U>{1})},
-          m_tilesizes{make_device_buffer<float>(queue.getDevice(),Ndim)},
-          m_wrapped{make_device_buffer<uint8_t>(queue.getDevice(),Ndim)},
+        : m_assoc{static_cast<std::size_t>(n_points), static_cast<std::size_t>(n_tiles), queue},
+          m_minmax{make_device_buffer<CoordinateExtremes<Ndim>>(queue.getDevice(),
+                                                                alpaka::Vec<std::size_t, 1U>{1})},
+          m_tilesizes{make_device_buffer<float>(queue.getDevice(), Ndim)},
+          m_wrapped{make_device_buffer<uint8_t>(queue.getDevice(), Ndim)},
           m_ntiles{n_tiles},
           m_nperdim{static_cast<int32_t>(std::pow(n_tiles, 1.f / Ndim))},
           m_view{} {
@@ -44,7 +44,7 @@ namespace clue::internal {
 
     template <::clue::concepts::Queue TQueue>
     ALPAKA_FN_HOST void initialize(TQueue& queue, int32_t npoints, int32_t ntiles, int32_t nperdim) {
-      m_assoc.initialize(queue,npoints, ntiles);
+      m_assoc.initialize(queue, npoints, ntiles);
       m_ntiles = ntiles;
       m_nperdim = nperdim;
 
@@ -88,12 +88,11 @@ namespace clue::internal {
       }
     };
 
-
     // requires(::clue::concepts::NonHostApi<DevType<TQueue>>)
-    template < ::clue::concepts::Queue TQueue>
+    template <::clue::concepts::Queue TQueue>
     ALPAKA_FN_HOST void fill(TQueue& queue, PointsDevice<Ndim, TDev>& d_points, size_t size) {
       auto pointsView = d_points.view();
-      m_assoc.fill(queue,size, GetGlobalBin{pointsView, m_view});
+      m_assoc.fill(queue, size, GetGlobalBin{pointsView, m_view});
     }
     // template < ::clue::concepts::Queue TQueue>
     // requires(::clue::concepts::HostApi<DevType<TQueue>>)
@@ -125,9 +124,10 @@ namespace clue::internal {
     ALPAKA_FN_HOST inline constexpr auto nPerDim() const { return m_nperdim; }
 
     ALPAKA_FN_HOST inline constexpr auto extents() const { return m_assoc.extents(); }
-    getBufferType<TDev,CoordinateExtremes<Ndim>> m_minmax;
-    getBufferType<TDev,float> m_tilesizes;
-    getBufferType<TDev,uint8_t> m_wrapped;
+    getBufferType<TDev, CoordinateExtremes<Ndim>> m_minmax;
+    getBufferType<TDev, float> m_tilesizes;
+    getBufferType<TDev, uint8_t> m_wrapped;
+
   private:
     DevAssociationMap<TDev> m_assoc;
 

@@ -14,13 +14,13 @@
 #include <tuple>
 #include <type_traits>
 
-#include <boost/core/demangle.hpp>
-
 #include <alpaka/alpaka.hpp>
 
 #include "CLUEstering/internal/alpaka/devices.hpp"
 
-#include <CLUEstering/internal/alpaka/config.hpp>
+#include <CLUEstering/internal/alpaka/memory.hpp>
+#include <CLUEstering/internal/alpaka/memory.hpp>
+#include <CLUEstering/internal/alpaka/memory.hpp>
 
 // Inspired by cub::CachingDeviceAllocator
 
@@ -89,19 +89,20 @@ namespace clue {
   template <typename TDevice, typename TQueue>
   class CachingAllocator {
   public:
-
-    using Device = TDevice;              // the "memory device", where the memory will be allocated
-    using Queue = TQueue;                // the queue used to submit the memory operations
-    using Event = alpaka::onHost::Event<TDevice>; // the events used to synchronise the operations
-    using Buffer = alpaka::onHost::SharedBuffer<ALPAKA_TYPEOF(alpaka::getApi(std::declval<TQueue>())), std::byte, alpaka_common::Vec1D>;
+    using Device = TDevice;  // the "memory device", where the memory will be allocated
+    using Queue = TQueue;    // the queue used to submit the memory operations
+    using Event = alpaka::onHost::Event<TDevice>;  // the events used to synchronise the operations
+    using Buffer = ALPAKA_TYPEOF(alpaka::onHost::alloc<std::byte>(
+        std::declval<Queue&>().getDevice(), std::declval<alpaka::Vec<uint32_t,1>>()));
 
     // The "memory device" type can either be the same as the "synchronisation device" type, or be the host CPU.
-    static_assert(std::is_same_v<Device, ALPAKA_TYPEOF(std::declval<TQueue>().getDevice())> or
-                      std::is_same_v<ALPAKA_TYPEOF(alpaka::getApi(std::declval<Device>())), alpaka::api::Host>,
-                  "The \"memory device\" type can either be the same as the "
-                  "\"synchronisation device\" "
-                  "type, or be the "
-                  "host CPU.");
+    static_assert(
+        std::is_same_v<Device, ALPAKA_TYPEOF(std::declval<TQueue>().getDevice())> or
+            std::is_same_v<ALPAKA_TYPEOF(alpaka::getApi(std::declval<Device>())), alpaka::api::Host>,
+        "The \"memory device\" type can either be the same as the "
+        "\"synchronisation device\" "
+        "type, or be the "
+        "host CPU.");
 
     struct CachedBytes {
       size_t free = 0;       // total bytes freed and cached on this device
@@ -111,7 +112,7 @@ namespace clue {
 
     explicit CachingAllocator(
         Device const& device,
-        TQueue const & queue, //queue for type deduction
+        TQueue const& queue,  //queue for type deduction
 
         unsigned int binGrowth,  // bin growth factor;
         unsigned int minBin,     // smallest bin, corresponds to binGrowth^minBin bytes;
@@ -150,7 +151,10 @@ namespace clue {
         std::cout << out.str() << '\n';
       }
     }
-
+    CachingAllocator(CachingAllocator const&) = delete;
+    CachingAllocator& operator=(CachingAllocator const&) = delete;
+    CachingAllocator(CachingAllocator&&) = default;
+    CachingAllocator& operator=(CachingAllocator&&) = default;
     ~CachingAllocator() {
       {
         // this should never be called while some memory blocks are still live
@@ -158,7 +162,6 @@ namespace clue {
         assert(liveBlocks_.empty());
         assert(cachedBytes_.live == 0);
       }
-
       freeAllCached();
     }
 
@@ -172,7 +175,9 @@ namespace clue {
     void* allocate(size_t bytes, Queue& queue) {
       // create a block descriptor for the requested allocation
       BlockDescriptor block;
-      block.queue = std::move(queue);
+      // currently a copy of the queue as and any pointer/reference might become dangling
+      //@TODO ensure queue pointer is never dangling or use a shared pointer owned by the caller
+      block.queue = queue;
       block.requested = bytes;
       std::tie(block.bin, block.bytes) = findBin(bytes);
 
@@ -181,7 +186,14 @@ namespace clue {
         allocateNewBlock(block);
       }
 
-      return block.buffer->data();
+      // Insert the allocation into the live blocks exactly once, and keep the pointer stable.
+      void* ptr = block.buffer->data();
+      {
+        std::scoped_lock lock(mutex_);
+        // avoids copying the block or some shared buffers (transfers ownership to liveBlocks_).
+        liveBlocks_.emplace(ptr, std::move(block));
+      }
+      return ptr;
     }
 
     // frees an allocation
@@ -194,9 +206,11 @@ namespace clue {
         ss << "Trying to free a non-live block at " << ptr;
         throw std::runtime_error(ss.str());
       }
+
       // remove the block from the list of live blocks
       BlockDescriptor block = std::move(i_block->second);
       liveBlocks_.erase(i_block);
+
       cachedBytes_.live -= block.bytes;
       cachedBytes_.requested -= block.requested;
 
@@ -204,30 +218,36 @@ namespace clue {
       if (recache) {
         block.queue->enqueue(*(block.event));
         cachedBytes_.free += block.bytes;
-        // after the call to insert(), cachedBlocks_ shares ownership of the buffer
-        // TODO use std::move ?
-        cachedBlocks_.insert(std::make_pair(block.bin, block));
+
+        // After the call to emplace(), cachedBlocks_ owns the block again.
+        // NOTE: grab debug info before move.
+        auto bin = block.bin;
+        auto bytes_ = block.bytes;
+
+        // move into cache (no copy)
+        cachedBlocks_.emplace(bin, std::move(block));
 
         if (debug_) {
           std::ostringstream out;
-          out << "\t" << deviceType_ << " " << alpaka::onHost::demangledName(device_) << " returned "
-              << block.bytes << " bytes at " << ptr << " from associated queue "
-              << block.queue->m_spQueueImpl.get() << " , event " << block.event->m_spEventImpl.get()
-              << " .\n\t\t " << cachedBlocks_.size() << " available blocks cached ("
-              << cachedBytes_.free << " bytes), " << liveBlocks_.size() << " live blocks ("
-              << cachedBytes_.live << " bytes) outstanding." << std::endl;
+          out << "\t " << alpaka::onHost::getName(device_)
+              << " returned " << bytes_ << " bytes at " << ptr << " from associated queue "
+              << alpaka::onHost::demangledName<TQueue>() << " .\n\t\t " << cachedBlocks_.size()
+              << " available blocks cached (" << cachedBytes_.free << " bytes), "
+              << liveBlocks_.size() << " live blocks (" << cachedBytes_.live
+              << " bytes) outstanding." << std::endl;
           std::cout << out.str() << std::endl;
         }
       } else {
         // if the buffer is not recached, it is automatically freed when block goes out of scope
         if (debug_) {
           std::ostringstream out;
-          out << "\t" << deviceType_ << " " << alpaka::onHost::demangledName(device_) << " freed " << block.bytes
-              << " bytes at " << ptr << " from associated queue "
-              << block.queue->m_spQueueImpl.get() << ", event " << block.event->m_spEventImpl.get()
-              << " .\n\t\t " << cachedBlocks_.size() << " available blocks cached ("
-              << cachedBytes_.free << " bytes), " << liveBlocks_.size() << " live blocks ("
-              << cachedBytes_.live << " bytes) outstanding." << std::endl;
+          out << "\t " << alpaka::onHost::getName(device_) << " freed "
+              << block.bytes << " bytes at " << ptr << " from associated queue "
+              << alpaka::onHost::getName(*block.queue) << ", event "
+              << alpaka::onHost::getName(*block.event) << " .\n\t\t " << cachedBlocks_.size()
+              << " available blocks cached (" << cachedBytes_.free << " bytes), "
+              << liveBlocks_.size() << " live blocks (" << cachedBytes_.live
+              << " bytes) outstanding." << std::endl;
           std::cout << out.str() << std::endl;
         }
       }
@@ -241,7 +261,12 @@ namespace clue {
       size_t bytes = 0;
       size_t requested = 0;  // for monitoring only
       unsigned int bin = 0;
-
+      BlockDescriptor() = default;
+      BlockDescriptor(BlockDescriptor const&) = delete;
+      BlockDescriptor& operator=(BlockDescriptor const&) = delete;
+      BlockDescriptor(BlockDescriptor&&) = default;
+      //only allow move semantics (transfer ownership to active block)
+      BlockDescriptor& operator=(BlockDescriptor&&) = default;
       // the "synchronisation device" for this block
       auto device() { return queue->getDevice(); }
     };
@@ -288,42 +313,45 @@ namespace clue {
 
       // iterate through the range of cached blocks in the same bin
       const auto [begin, end] = cachedBlocks_.equal_range(block.bin);
-      for (auto iBlock = begin; iBlock != end; ++iBlock) {
-        if ((reuseSameQueueAllocations_ and (*block.queue == *(iBlock->second.queue))) or
-            iBlock->second.event->isComplete()) {
+      for (auto it = begin; it != end; ++it) {
+        if ((reuseSameQueueAllocations_ and (*block.queue == *(it->second.queue))) or
+            it->second.event->isComplete()) {
           // associate the cached buffer to the new queue
-          auto queue = std::move(*(block.queue));
+          Queue newQueue = std::move(*(block.queue));
+
+          // take ownership of cached entry without copying
+          // (extract removes the node from the multimap but keeps its storage intact)
+          auto node = cachedBlocks_.extract(it);
+
+          // accounting info must be captured before moving out of node.mapped()
+          const auto reusedBytes = node.mapped().bytes;
+          const auto reusedRequested = node.mapped().requested;
+
+          // move cached descriptor out (no copy of SharedBuffer)
           // TODO cache (or remove) the debug information and use std::move()
-          block = iBlock->second;
-          block.queue = std::move(queue);
+          block = std::move(node.mapped());
+          block.queue = std::move(newQueue);
 
           // if the new queue is on different device than the old event, create a new event
           if (block.device() != block.event->getDevice()) {
             block.event = block.device().makeEvent();
           }
 
-          // insert the cached block into the live blocks
-          // TODO cache (or remove) the debug information and use std::move()
-          liveBlocks_[block.buffer->data()] = block;
-
           // update the accounting information
-          cachedBytes_.free -= block.bytes;
-          cachedBytes_.live += block.bytes;
-          cachedBytes_.requested += block.requested;
+          cachedBytes_.free -= reusedBytes;
+          cachedBytes_.live += reusedBytes;
+          cachedBytes_.requested += reusedRequested;
 
           if (debug_) {
             std::ostringstream out;
-            out << "\t" << deviceType_ << " " << alpaka::onHost::getName(device_)
-                << " reused cached block at " << block.buffer->data() << " (" << block.bytes
-                << " bytes) for queue " << block.queue->m_spQueueImpl.get() << ", event "
-                << block.event->m_spEventImpl.get() << " (previously associated with stream "
-                << iBlock->second.queue->m_spQueueImpl.get() << " , event "
-                << iBlock->second.event->m_spEventImpl.get() << ")." << std::endl;
+            out << "\t" << alpaka::onHost::getName(device_)
+                << " reused cached block at " << block.buffer->data() << " (" << reusedBytes
+                << " bytes) for queue " << alpaka::onHost::getName(*block.queue) << ", event "
+                << alpaka::onHost::getName(*block.event) << "." << std::endl;
             std::cout << out.str() << '\n';
           }
 
-          // remove the reused block from the list of cached blocks
-          cachedBlocks_.erase(iBlock);
+          // cached block has been removed from cachedBlocks_ by extract()
           return true;
         }
       }
@@ -334,10 +362,10 @@ namespace clue {
     Buffer allocateBuffer(size_t bytes, Queue const& queue) {
       if constexpr (std::is_same_v<Device, ALPAKA_TYPEOF(queue.getDevice())>) {
         // allocate device memory
-        return alpaka::onHost::alloc<std::byte>(queue, bytes);
+        return alpaka::onHost::alloc<std::byte>(queue.getDevice(),alpaka::Vec<uint32_t,1>{bytes});
       } else if constexpr (std::is_same_v<ALPAKA_TYPEOF(queue.getApi()), alpaka::api::Host>) {
         // allocate pinned host memory accessible by the queue's platform
-        return alpaka::onHost::allocMapped<std::byte>(queue, bytes);
+        return alpaka::onHost::allocMapped<std::byte>(queue, alpaka::Vec<uint32_t,1>{bytes});
       } else {
         // unsupported combination
         static_assert(std::is_same_v<Device, ALPAKA_TYPEOF(queue.getDevice())> or
@@ -356,9 +384,10 @@ namespace clue {
         // the allocation attempt failed: free all cached blocks on the device and retry
         if (debug_) {
           std::ostringstream out;
-          out << "\t" << deviceType_ << " " << alpaka::onHost::demangledName(device_) << " failed to allocate "
-              << block.bytes << " bytes for queue " << block.queue->m_spQueueImpl.get()
-              << ", retrying after freeing cached allocations" << std::endl;
+          out << "\t" << alpaka::onHost::getName(device_)
+              << " failed to allocate " << block.bytes << " bytes for queue "
+              << alpaka::onHost::getName(*block.queue) << ", retrying after freeing cached allocations"
+              << std::endl;
           std::cout << out.str() << std::endl;
         }
         // TODO implement a method that frees only up to block.bytes bytes
@@ -369,22 +398,21 @@ namespace clue {
       }
 
       // create a new event associated to the "synchronisation device"
-      block.event = Event{block.device()};
+      block.event = block.device().makeEvent();
 
       {
+        // cachedBytes_ is shared state; keep original locking discipline
         std::scoped_lock lock(mutex_);
         cachedBytes_.live += block.bytes;
         cachedBytes_.requested += block.requested;
-        // TODO use std::move() ?
-        liveBlocks_[block.buffer->data()] = block;
       }
 
       if (debug_) {
         std::ostringstream out;
-        out << "\t" << deviceType_ << " " << alpaka::onHost::demangledName(device_) << " allocated new block at "
-            << block.buffer->data() << " (" << block.bytes << " bytes associated with queue "
-            << block.queue->m_spQueueImpl.get() << ", event " << block.event->m_spEventImpl.get()
-            << "." << std::endl;
+        out << "\t" << alpaka::onHost::getName(device_)
+            << " allocated new block at " << block.buffer->data() << " (" << block.bytes
+            << " bytes associated with queue " << alpaka::onHost::getName(*block.queue)
+            << ", event " << alpaka::onHost::getName(*block.event) << ")." << std::endl;
         std::cout << out.str() << std::endl;
       }
     }
@@ -398,7 +426,7 @@ namespace clue {
 
         if (debug_) {
           std::ostringstream out;
-          out << "\t" << deviceType_ << " " << alpaka::onHost::demangledName(device_) << " freed "
+          out << "\t" << alpaka::onHost::getName(device_) << " freed "
               << iBlock->second.bytes << " bytes.\n\t\t  " << (cachedBlocks_.size() - 1)
               << " available blocks cached (" << cachedBytes_.free << " bytes), "
               << liveBlocks_.size() << " live blocks (" << cachedBytes_.live
@@ -417,11 +445,8 @@ namespace clue {
     using BusyBlocks =
         std::map<void*, BlockDescriptor>;  // ordered by the address of the allocated memory
 
-    inline static const std::string deviceType_ = boost::core::demangle(typeid(Device).name());
-
     mutable std::mutex mutex_;
     Device device_;  // the device where the memory is allocated
-
     CachedBytes cachedBytes_;
     CachedBlocks cachedBlocks_;  // Set of cached device allocations available for reuse
     BusyBlocks liveBlocks_;      // map of pointers to the live device allocations currently in use

@@ -7,7 +7,6 @@
 #include "CLUEstering/internal/algorithm/reduce/reduce.hpp"
 #include "CLUEstering/internal/alpaka/memory.hpp"
 #include "CLUEstering/internal/meta/apply.hpp"
-#include "CLUEstering/internal/nostd/maximum.hpp"
 
 #include <alpaka/alpaka.hpp>
 #include <cassert>
@@ -31,8 +30,8 @@ namespace clue {
     }
     template <concepts::Queue TQueue, std::size_t Ndim>
     void copyToHost(TQueue& queue,
-                PointsHost<Ndim>& h_points,
-                const PointsDevice<Ndim, DevType<TQueue>>& d_points);
+                    PointsHost<Ndim>& h_points,
+                    const PointsDevice<Ndim, DevType<TQueue>>& d_points);
 
     template <concepts::Queue TQueue, std::size_t Ndim>
     void copyToDevice(TQueue& queue,
@@ -72,9 +71,8 @@ namespace clue {
                                  std::span<float> coordinates,
                                  std::span<float> weights,
                                  std::span<int> output) {
-      meta::apply<Ndim>([&]<std::size_t Dim>() {
-        view.coords[Dim] = coordinates.data() + Dim * n_points;
-      });
+      meta::apply<Ndim>(
+          [&]<std::size_t Dim>() { view.coords[Dim] = coordinates.data() + Dim * n_points; });
       view.weight = weights.data();
       view.cluster_index = output.data();
       view.is_seed = reinterpret_cast<int*>(alloc_buffer);
@@ -83,11 +81,10 @@ namespace clue {
       view.n = n_points;
     }
     template <std::size_t Ndim, concepts::Pointer... TBuffers>
-      requires(sizeof...(TBuffers) == 3)
-    inline void partitionSoAView(PointsView<Ndim>& view,
-                                 std::byte* alloc_buffer,
-                                 int32_t n_points,
-                                 TBuffers... buffer) {
+    requires(sizeof...(TBuffers) == 3) inline void partitionSoAView(PointsView<Ndim>& view,
+                                                                    std::byte* alloc_buffer,
+                                                                    int32_t n_points,
+                                                                    TBuffers... buffer) {
       auto buffers_tuple = std::make_tuple(buffer...);
 
       meta::apply<Ndim>([&]<std::size_t Dim>() {
@@ -117,11 +114,10 @@ namespace clue {
       view.n = n_points;
     }
     template <std::size_t Ndim, concepts::Pointer... TBuffers>
-      requires(sizeof...(TBuffers) == 2)
-    inline void partitionSoAView(PointsView<Ndim>& view,
-                                 std::byte* alloc_buffer,
-                                 int32_t n_points,
-                                 TBuffers... buffers) {
+    requires(sizeof...(TBuffers) == 2) inline void partitionSoAView(PointsView<Ndim>& view,
+                                                                    std::byte* alloc_buffer,
+                                                                    int32_t n_points,
+                                                                    TBuffers... buffers) {
       auto buffers_tuple = std::make_tuple(buffers...);
 
       meta::apply<Ndim>([&]<std::size_t Dim>() {
@@ -135,11 +131,8 @@ namespace clue {
       view.n = n_points;
     }
     template <std::size_t Ndim, concepts::Pointer... TBuffers>
-      requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-    inline void partitionSoAView(PointsView<Ndim>& view,
-                                 std::byte* alloc_buffer,
-                                 int32_t n_points,
-                                 TBuffers... buffers) {
+    requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1) inline void partitionSoAView(
+        PointsView<Ndim>& view, std::byte* alloc_buffer, int32_t n_points, TBuffers... buffers) {
       auto buffers_tuple = std::make_tuple(buffers...);
 
       meta::apply<Ndim>([&]<std::size_t Dim>() {
@@ -158,8 +151,9 @@ namespace clue {
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
   inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device, int32_t n_points)
       : m_buffer{make_device_buffer<std::byte>(device,
-                                                 soa::device::computeSoASize<Ndim>(n_points))},
+                                               soa::device::computeSoASize<Ndim>(n_points))},
         m_view{},
+        m_device(device),
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points);
   }
@@ -170,6 +164,7 @@ namespace clue {
                                                 std::span<std::byte> buffer)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
+        m_device(device),
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), buffer.data(), n_points);
   }
@@ -181,6 +176,7 @@ namespace clue {
                                                 std::span<int> output)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
+        m_device(device),
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, input, output);
   }
@@ -193,6 +189,7 @@ namespace clue {
                                                 std::span<int> output)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
+        m_device(device),
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(
         m_view, m_buffer.data(), n_points, coordinates, weights, output);
@@ -205,6 +202,7 @@ namespace clue {
                                                 int* output)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
+        m_device(device),
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, input, output);
   }
@@ -214,6 +212,7 @@ namespace clue {
       TDev& device, int32_t n_points, float* coordinates, float* weights, int* output)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
+        m_device(device),
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(
         m_view, m_buffer.data(), n_points, coordinates, weights, output);
@@ -221,12 +220,13 @@ namespace clue {
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
   template <concepts::Pointer... TBuffers>
-    requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
-                                                int32_t n_points,
-                                                TBuffers... buffers)
+  requires(sizeof...(TBuffers) == Ndim + 2 and
+           Ndim > 1) inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
+                                                                   int32_t n_points,
+                                                                   TBuffers... buffers)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_view{},
+        m_device(device),
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, buffers...);
   }
@@ -260,15 +260,24 @@ namespace clue {
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
   ALPAKA_FN_HOST inline const auto& PointsDevice<Ndim, TDev>::n_clusters() {
+    auto queue = m_device.make_Queue(alpaka::queueKind::blocking);
+
     assert(m_clustered &&
            "The points have to be clustered before the cluster properties can be accessed");
     if (!m_nclusters.has_value()) {
       auto cluster_ids = this->clusterIndexes();
-      m_nclusters = internal::algorithm::reduce(cluster_ids.begin(),
-                                                cluster_ids.end(),
-                                                std::numeric_limits<int32_t>::lowest(),
-                                                clue::nostd::maximum<int32_t>{}) +
-                    1;
+      auto hostBuf = alpaka::onHost::allocHost<int32_t>(m_device, alpaka::Vec{1U});
+      auto devOutBuf = alpaka::onHost::allocLike<int32_t>(m_device, hostBuf);
+
+      alpaka::onHost::reduce(queue,
+                             DevicePool::exec(),
+                             std::numeric_limits<int32_t>::lowest(),
+                             devOutBuf,
+                             alpaka::math::max,
+                             cluster_ids);
+      alpaka::onHost::memcpy(queue, hostBuf, devOutBuf);
+
+      m_nclusters = hostBuf[0u] + 1;
     }
 
     return m_nclusters.value();

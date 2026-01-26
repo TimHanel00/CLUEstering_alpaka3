@@ -53,8 +53,8 @@ namespace clue::internal {
     ALPAKA_FN_ACC inline constexpr int getGlobalBin(const float* coords) const {
       int global_bin = 0;
       for (auto dim = 0u; dim != Ndim - 1; ++dim) {
-        global_bin +=
-            alpaka::math::pow(static_cast<float>(nperdim), Ndim - dim - 1) * getBin(coords[dim], dim);
+        global_bin += alpaka::math::pow(static_cast<float>(nperdim), Ndim - dim - 1) *
+                      getBin(coords[dim], dim);
       }
       global_bin += getBin(coords[Ndim - 1], Ndim - 1);
       return global_bin;
@@ -86,9 +86,9 @@ namespace clue::internal {
       const auto offset1 = offsets[globalBinId + 1];
 
       int32_t* buf_ptr = indexes + offset0;
-      return std::span{buf_ptr, static_cast<size_t>(offset1 - offset0)};
-    }
 
+      return makeMdSpan(buf_ptr, alpaka::Vec{static_cast<size_t>(offset1 - offset0)});
+    }
 
     ALPAKA_FN_ACC inline constexpr float normalizeCoordinate(float coord, int dim) const {
       const float range = minmax->range(dim);
@@ -105,7 +105,8 @@ namespace clue::internal {
       std::array<float, Ndim> distance_vector;
       for (auto dim = 0u; dim != Ndim; ++dim) {
         if (wrapping[dim])
-          distance_vector[dim] = alpaka::math::abs(normalizeCoordinate(coord_i[dim] - coord_j[dim], dim));
+          distance_vector[dim] =
+              alpaka::math::abs(normalizeCoordinate(coord_i[dim] - coord_j[dim], dim));
         else
           distance_vector[dim] = alpaka::math::abs(coord_i[dim] - coord_j[dim]);
       }

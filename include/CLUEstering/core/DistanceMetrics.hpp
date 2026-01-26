@@ -18,7 +18,7 @@ namespace clue {
     concept distance_metric = requires(TMetric&& metric) {
       {
         metric(std::array<float, Ndim + 1>{}, std::array<float, Ndim + 1>{})
-      } -> std::same_as<float>;
+        } -> std::same_as<float>;
     };
 
   }  // namespace concepts
@@ -66,8 +66,8 @@ namespace clue {
     /// @param weights Weights for each dimension
     /// @return WeightedEuclideanMetric object
     template <std::floating_point... TValues>
-      requires(sizeof...(TValues) == Ndim)
-    ALPAKA_FN_HOST_ACC constexpr WeightedEuclideanMetric(TValues... weights)
+    requires(sizeof...(TValues) == Ndim) ALPAKA_FN_HOST_ACC
+        constexpr WeightedEuclideanMetric(TValues... weights)
         : m_weights{weights...} {}
     /// @brief Constructor euclidian metric with weights
     ///
@@ -200,8 +200,8 @@ namespace clue {
     /// @param weights Weights for each dimension
     /// @return WeightedChebyshevMetric object
     template <std::floating_point... TValues>
-      requires(sizeof...(TValues) == Ndim)
-    ALPAKA_FN_HOST_ACC constexpr WeightedChebyshevMetric(TValues... weights)
+    requires(sizeof...(TValues) == Ndim) ALPAKA_FN_HOST_ACC
+        constexpr WeightedChebyshevMetric(TValues... weights)
         : m_weights{weights...} {}
     /// @brief Constructor weighted chebyshev metric with weights
     ///
@@ -223,8 +223,9 @@ namespace clue {
     /// @return Weighted Chebyshev distance between the two points
     ALPAKA_FN_HOST_ACC constexpr inline auto operator()(const Point<Ndim>& lhs,
                                                         const Point<Ndim>& rhs) const {
-      return meta::maximum<Ndim>(
-          [&]<std::size_t Dim>() { return m_weights[Dim] * alpaka::math::abs(lhs[Dim] - rhs[Dim]); });
+      return meta::maximum<Ndim>([&]<std::size_t Dim>() {
+        return m_weights[Dim] * alpaka::math::abs(lhs[Dim] - rhs[Dim]);
+      });
     }
   };
 

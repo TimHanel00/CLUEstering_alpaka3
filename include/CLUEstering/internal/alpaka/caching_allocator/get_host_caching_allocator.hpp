@@ -8,9 +8,9 @@
 namespace clue {
 
   template <typename TQueue>
-  inline auto& getHostCachingAllocator(TQueue const &queue) {
+  inline auto& getHostCachingAllocator(TQueue const& queue) {
     // thread safe initialisation of the host allocator
-    static CachingAllocator<alpaka::api::Host,TQueue> allocator(
+    static CachingAllocator<alpaka::api::Host, TQueue> allocator(
         DevicePool::getHost(),
         config::binGrowth,
         config::minBin,

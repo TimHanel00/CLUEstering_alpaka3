@@ -30,7 +30,7 @@ namespace clue {
   /// @tparam TQueue The type of queue to use for device computations
   /// @tparam Ndim The number of dimensions of the points
   template <concepts::Queue TQueue, std::size_t Ndim>
-  inline auto get_clusters(TQueue& queue, const PointsDevice<Ndim,DevType<TQueue>>& points);
+  inline auto get_clusters(TQueue& queue, const PointsDevice<Ndim, DevType<TQueue>>& points);
 
 }  // namespace clue
 

@@ -7,7 +7,7 @@
 #include <optional>
 
 namespace clue::detail {
-  template<typename TQueue,typename TDev>
+  template <typename TQueue, typename TDev>
   inline void setup_seeds(TQueue& queue,
                           std::optional<internal::SeedArray<TDev>>& seeds,
                           std::size_t seed_candidates) {
