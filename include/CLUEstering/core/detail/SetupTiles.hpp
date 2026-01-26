@@ -13,9 +13,7 @@
 
 namespace clue::detail {
 
-  template <typename TQueue,
-            std::size_t Ndim,
-            typename TDev>
+  template <typename TQueue, std::size_t Ndim, typename TDev>
   void setup_tiles(TQueue& queue,
                    std::optional<internal::Tiles<Ndim, TDev>>& tiles,
                    const PointsHost<Ndim>& points,
@@ -43,10 +41,10 @@ namespace clue::detail {
     detail::compute_tile_size(min_max.data(), tile_sizes, points, n_per_dim);
     alpaka::onHost::memcpy(queue, tiles->m_minmax, min_max);
     alpaka::onHost::memcpy(queue, tiles->m_tilesizes, tile_sizes);
-    auto view=alpaka::makeView(wrapped_coordinates);
+    auto view = alpaka::makeView(wrapped_coordinates);
 
-    auto &dst = tiles->m_wrapped;
-    alpaka::onHost::memcpy(queue, dst, view,alpaka::Vec<uint8_t,1>{Ndim});
+    auto& dst = tiles->m_wrapped;
+    alpaka::onHost::memcpy(queue, dst, view, alpaka::Vec<uint8_t, 1>{Ndim});
     alpaka::onHost::wait(queue);
   }
 

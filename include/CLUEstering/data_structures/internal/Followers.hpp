@@ -19,13 +19,13 @@ namespace clue {
 
     template <concepts::Queue TQueue>
     ALPAKA_FN_HOST void initialize(int32_t npoints, TQueue& queue) {
-      m_assoc.initialize(queue,npoints, npoints);
+      m_assoc.initialize(queue, npoints, npoints);
     }
     ALPAKA_FN_HOST void reset(int32_t npoints) { m_assoc.reset(npoints, npoints); }
 
     template <concepts::Queue TQueue, std::size_t Ndim>
     ALPAKA_FN_HOST void fill(TQueue& queue, const PointsDevice<Ndim, TDev>& d_points) {
-      m_assoc.fill(queue,d_points.size(), d_points.nearestHigher());
+      m_assoc.fill(queue, d_points.size(), d_points.nearestHigher());
     }
 
     ALPAKA_FN_HOST inline constexpr int32_t extents() const { return m_assoc.extents().values; }

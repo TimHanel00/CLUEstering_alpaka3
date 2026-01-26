@@ -20,36 +20,36 @@ namespace clue {
           throw std::out_of_range("Dimension out of range in call to coords.");
         }
         auto& view = static_cast<const TPoints*>(this)->m_view;
-        return std::span<const float>(view.coords[dim], view.n);
+        return alpaka::makeMdSpan(static_cast<const float*>(view.coords[dim]), alpaka::Vec{view.n});
       }
       ALPAKA_FN_HOST auto coords(std::size_t dim) {
         if (dim >= TPoints::Ndim_) {
           throw std::out_of_range("Dimension out of range in call to coords.");
         }
         auto& view = static_cast<TPoints*>(this)->m_view;
-        return std::span<float>(view.coords[dim], view.n);
+        return alpaka::makeMdSpan(static_cast<float*>(view.coords[dim]), alpaka::Vec{view.n});
       }
 
       ALPAKA_FN_HOST auto weights() const {
         auto& view = static_cast<const TPoints*>(this)->m_view;
-        return std::span<const float>(view.weight, view.n);
+        return alpaka::makeMdSpan(static_cast<const float*>(view.weight), alpaka::Vec{view.n});
       }
       ALPAKA_FN_HOST auto weights() {
         auto& view = static_cast<TPoints*>(this)->m_view;
-        return std::span<float>(view.weight, view.n);
+        return alpaka::makeMdSpan(static_cast<float*>(view.weight), alpaka::Vec{view.n});
       }
 
       ALPAKA_FN_HOST auto clusterIndexes() const {
         assert(static_cast<const TPoints&>(*this).m_clustered &&
                "The points have not been clustered yet, so the cluster indexes cannot be accessed");
         auto& view = static_cast<const TPoints*>(this)->m_view;
-        return std::span<const int>(view.cluster_index, view.n);
+        return alpaka::makeMdSpan(static_cast<const int*>(view.cluster_index), alpaka::Vec{view.n});
       }
       ALPAKA_FN_HOST auto clusterIndexes() {
         assert(static_cast<const TPoints&>(*this).m_clustered &&
                "The points have not been clustered yet, so the cluster indexes cannot be accessed");
         auto& view = static_cast<TPoints*>(this)->m_view;
-        return std::span<int>(view.cluster_index, view.n);
+        return alpaka::makeMdSpan(static_cast<int*>(view.cluster_index), alpaka::Vec{view.n});
       }
 
       ALPAKA_FN_HOST auto clustered() const {

@@ -19,32 +19,31 @@ namespace clue {
   template <concepts::Queue TQueue, std::size_t Ndim>
   inline void copyToHost(TQueue& queue,
                          PointsHost<Ndim>& h_points,
-                         const PointsDevice<Ndim, DevType<TQueue>>& d_points)
-  {
-    if(h_points.m_size != d_points.m_size) {
+                         const PointsDevice<Ndim, DevType<TQueue>>& d_points) {
+    if (h_points.m_size != d_points.m_size) {
       throw std::invalid_argument("copyToHost: size mismatch between host and device points");
     }
 
     auto const extent = alpaka::Vec{static_cast<std::size_t>(h_points.m_size)};
 
     // coords
-    for(std::size_t dim = 0; dim < Ndim; ++dim) {
+    for (std::size_t dim = 0; dim < Ndim; ++dim) {
       auto dst = alpaka::makeView(alpaka::api::host, h_points.m_view.coords[dim], extent);
-      auto src = alpaka::makeView(queue,            d_points.m_view.coords[dim], extent);
+      auto src = alpaka::makeView(queue, d_points.m_view.coords[dim], extent);
       alpaka::onHost::memcpy(queue, dst, src);
     }
 
     // weight
     {
       auto dst = alpaka::makeView(alpaka::api::host, h_points.m_view.weight, extent);
-      auto src = alpaka::makeView(queue,            d_points.m_view.weight, extent);
+      auto src = alpaka::makeView(queue, d_points.m_view.weight, extent);
       alpaka::onHost::memcpy(queue, dst, src);
     }
 
     // cluster index
     {
       auto dst = alpaka::makeView(alpaka::api::host, h_points.m_view.cluster_index, extent);
-      auto src = alpaka::makeView(queue,            d_points.m_view.cluster_index, extent);
+      auto src = alpaka::makeView(queue, d_points.m_view.cluster_index, extent);
       alpaka::onHost::memcpy(queue, dst, src);
     }
 
@@ -58,41 +57,38 @@ namespace clue {
   }
 
   template <concepts::Queue TQueue, std::size_t Ndim>
-  inline auto copyToHost(TQueue& queue,
-                         const PointsDevice<Ndim, DevType<TQueue>>& d_points)
-  {
+  inline auto copyToHost(TQueue& queue, const PointsDevice<Ndim, DevType<TQueue>>& d_points) {
     PointsHost<Ndim> h_points{d_points.m_size};
     copyToHost(queue, h_points, d_points);
     return h_points;
   }
   template <concepts::Queue TQueue, std::size_t Ndim>
-   inline void copyToDevice(TQueue& queue,
-                            PointsDevice<Ndim, DevType<TQueue>>& d_points,
-                            const PointsHost<Ndim>& h_points)
-  {
-    if(h_points.m_size != d_points.m_size) {
+  inline void copyToDevice(TQueue& queue,
+                           PointsDevice<Ndim, DevType<TQueue>>& d_points,
+                           const PointsHost<Ndim>& h_points) {
+    if (h_points.m_size != d_points.m_size) {
       throw std::invalid_argument("copyToDevice: size mismatch between host and device points");
     }
 
     auto const extent = alpaka::Vec{static_cast<std::size_t>(h_points.m_size)};
 
     // coords
-    for(std::size_t dim = 0; dim < Ndim; ++dim) {
-      auto dst = alpaka::makeView(queue,            d_points.m_view.coords[dim], extent);
+    for (std::size_t dim = 0; dim < Ndim; ++dim) {
+      auto dst = alpaka::makeView(queue, d_points.m_view.coords[dim], extent);
       auto src = alpaka::makeView(alpaka::api::host, h_points.m_view.coords[dim], extent);
       alpaka::onHost::memcpy(queue, dst, src);
     }
 
     // weight
     {
-      auto dst = alpaka::makeView(queue,            d_points.m_view.weight, extent);
+      auto dst = alpaka::makeView(queue, d_points.m_view.weight, extent);
       auto src = alpaka::makeView(alpaka::api::host, h_points.m_view.weight, extent);
       alpaka::onHost::memcpy(queue, dst, src);
     }
 
     // cluster index
     {
-      auto dst = alpaka::makeView(queue,            d_points.m_view.cluster_index, extent);
+      auto dst = alpaka::makeView(queue, d_points.m_view.cluster_index, extent);
       auto src = alpaka::makeView(alpaka::api::host, h_points.m_view.cluster_index, extent);
       alpaka::onHost::memcpy(queue, dst, src);
     }
@@ -103,10 +99,9 @@ namespace clue {
   }
 
   template <concepts::Queue TQueue, std::size_t Ndim>
-  inline auto copyToDevice(TQueue& queue,
-                           const PointsHost<Ndim>& h_points)
-  {
-    auto dev = queue.getDevice(); // Alpaka3 Queue::getDevice() :contentReference[oaicite:1]{index=1}
+  inline auto copyToDevice(TQueue& queue, const PointsHost<Ndim>& h_points) {
+    auto dev =
+        queue.getDevice();  // Alpaka3 Queue::getDevice() :contentReference[oaicite:1]{index=1}
     PointsDevice<Ndim, DevType<TQueue>> d_points{dev, h_points.m_size};
     copyToDevice(queue, d_points, h_points);
     return d_points;
@@ -116,13 +111,15 @@ namespace clue {
   ///
   /// @tparam Ndim The number of dimensions of the points to manage
   /// @tparam TDev The device type to use for the allocation. Defaults to clue::Device.
-  template <std::size_t Ndim,alpaka::onHost::concepts::Device TDev>
+  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
   class PointsDevice : public internal::points_interface<PointsDevice<Ndim, TDev>> {
-    getBufferType<TDev,std::byte> m_buffer;
+    getBufferType<TDev, std::byte> m_buffer;
     PointsView<Ndim> m_view;
     std::optional<std::size_t> m_nclusters;
     int32_t m_size;
     bool m_clustered = false;
+    TDev m_device;
+
   public:
     /// @brief Construct a PointsDevice object
     ///
@@ -185,8 +182,8 @@ namespace clue {
     /// @param n_points The number of points to allocate
     /// @param buffers The buffers to use for the points
     template <concepts::Pointer... TBuffers>
-      requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-    PointsDevice(TDev& device, int32_t n_points, TBuffers... buffers);
+    requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
+        PointsDevice(TDev& device, int32_t n_points, TBuffers... buffers);
 
     PointsDevice(const PointsDevice&) = delete;
     PointsDevice& operator=(const PointsDevice&) = delete;
@@ -252,7 +249,7 @@ namespace clue {
 
     void mark_clustered() { m_clustered = true; }
 
-    template <concepts::Queue _TQueue,std::size_t _Ndim>
+    template <concepts::Queue _TQueue, std::size_t _Ndim>
     friend class Clusterer;
     template <concepts::Queue _TQueue, std::size_t _Ndim>
     friend void copyToHost(_TQueue& queue,

@@ -19,5 +19,13 @@ add_alpaka_executor_binaries(
         LINK_LIBS CLUEstering::CLUEstering alpaka::alpaka
         OUT_TARGETS created_binaries
 )
-
-message(STATUS "Created targets: ${created_bins}")
+foreach(tgt IN LISTS created_binaries)
+    alpaka_finalize("${tgt}")
+endforeach()
+#if(alpaka_DEP_CUDA)
+#    set(tgt "basic_cuda")
+#    add_executable("${tgt}" main.cpp)
+#    target_link_libraries("${tgt}" PUBLIC CLUEstering::CLUEstering alpaka::alpaka)
+#    target_compile_definitions("${tgt}" PRIVATE alpaka_SELECT_CUDA)
+#    alpaka_finalize("${tgt}")
+#endif()

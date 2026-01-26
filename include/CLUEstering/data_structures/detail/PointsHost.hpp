@@ -40,8 +40,9 @@ namespace clue {
       view.n = n_points;
     }
     template <std::size_t Ndim, concepts::Pointer... TBuffers>
-      requires(sizeof...(TBuffers) == 3)
-    inline void partitionSoAView(PointsView<Ndim>& view, int32_t n_points, TBuffers... buffer) {
+    requires(sizeof...(TBuffers) == 3) inline void partitionSoAView(PointsView<Ndim>& view,
+                                                                    int32_t n_points,
+                                                                    TBuffers... buffer) {
       auto buffers_tuple = std::make_tuple(buffer...);
 
       meta::apply<Ndim>([&]<std::size_t Dim>() {
@@ -52,8 +53,9 @@ namespace clue {
       view.n = n_points;
     }
     template <std::size_t Ndim, concepts::Pointer... TBuffers>
-      requires(sizeof...(TBuffers) == 2)
-    inline void partitionSoAView(PointsView<Ndim>& view, int32_t n_points, TBuffers... buffers) {
+    requires(sizeof...(TBuffers) == 2) inline void partitionSoAView(PointsView<Ndim>& view,
+                                                                    int32_t n_points,
+                                                                    TBuffers... buffers) {
       auto buffers_tuple = std::make_tuple(buffers...);
 
       meta::apply<Ndim>([&]<std::size_t Dim>() {
@@ -64,8 +66,8 @@ namespace clue {
       view.n = n_points;
     }
     template <std::size_t Ndim, concepts::Pointer... TBuffers>
-      requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-    inline void partitionSoAView(PointsView<Ndim>& view, int32_t n_points, TBuffers... buffers) {
+    requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1) inline void partitionSoAView(
+        PointsView<Ndim>& view, int32_t n_points, TBuffers... buffers) {
       auto buffers_tuple = std::make_tuple(buffers...);
 
       meta::apply<Ndim>(
@@ -76,8 +78,9 @@ namespace clue {
     }
 
     template <std::size_t Ndim, std::ranges::contiguous_range... TBuffers>
-      requires(sizeof...(TBuffers) == 3)
-    inline void partitionSoAView(PointsView<Ndim>& view, int32_t n_points, TBuffers&&... buffers) {
+    requires(sizeof...(TBuffers) == 3) inline void partitionSoAView(PointsView<Ndim>& view,
+                                                                    int32_t n_points,
+                                                                    TBuffers&&... buffers) {
       auto buffers_tuple = std::forward_as_tuple(std::forward<TBuffers>(buffers)...);
 
       meta::apply<Ndim>([&]<std::size_t Dim>() {
@@ -89,8 +92,9 @@ namespace clue {
       view.n = n_points;
     }
     template <std::size_t Ndim, std::ranges::contiguous_range... TBuffers>
-      requires(sizeof...(TBuffers) == 2)
-    inline void partitionSoAView(PointsView<Ndim>& view, int32_t n_points, TBuffers&&... buffers) {
+    requires(sizeof...(TBuffers) == 2) inline void partitionSoAView(PointsView<Ndim>& view,
+                                                                    int32_t n_points,
+                                                                    TBuffers&&... buffers) {
       auto buffers_tuple = std::forward_as_tuple(std::forward<TBuffers>(buffers)...);
 
       meta::apply<Ndim>([&]<std::size_t Dim>() {
@@ -102,8 +106,8 @@ namespace clue {
       view.n = n_points;
     }
     template <uint8_t Ndim, std::ranges::contiguous_range... TBuffers>
-      requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-    inline void partitionSoAView(PointsView<Ndim>& view, int32_t n_points, TBuffers&&... buffers) {
+    requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1) inline void partitionSoAView(
+        PointsView<Ndim>& view, int32_t n_points, TBuffers&&... buffers) {
       auto buffers_tuple = std::forward_as_tuple(std::forward<TBuffers>(buffers)...);
 
       meta::apply<Ndim>([&]<std::size_t Dim>() {
@@ -118,8 +122,8 @@ namespace clue {
   }  // namespace soa::host
 
   template <std::size_t Ndim>
-  inline PointsHost<Ndim>::PointsHost( int32_t n_points)
-      : m_buffer{make_host_buffer<std::byte>( soa::host::computeSoASize<Ndim>(n_points))},
+  inline PointsHost<Ndim>::PointsHost(int32_t n_points)
+      : m_buffer{make_host_buffer<std::byte>(soa::host::computeSoASize<Ndim>(n_points))},
         m_view{},
         m_size{n_points} {
     soa::host::partitionSoAView<Ndim>(m_view, m_buffer->data(), n_points);
@@ -142,8 +146,7 @@ namespace clue {
   }
 
   template <std::size_t Ndim>
-  inline PointsHost<Ndim>::PointsHost(
-                                      int32_t n_points,
+  inline PointsHost<Ndim>::PointsHost(int32_t n_points,
                                       std::span<float> coordinates,
                                       std::span<float> weights,
                                       std::span<int> output)
@@ -153,8 +156,8 @@ namespace clue {
 
   template <std::size_t Ndim>
   template <std::ranges::contiguous_range... TBuffers>
-    requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-  inline PointsHost<Ndim>::PointsHost(int32_t n_points, TBuffers&&... buffers)
+  requires(sizeof...(TBuffers) == Ndim + 2 and
+           Ndim > 1) inline PointsHost<Ndim>::PointsHost(int32_t n_points, TBuffers&&... buffers)
       : m_view{}, m_size{n_points} {
     soa::host::partitionSoAView<Ndim>(m_view, n_points, std::forward<TBuffers>(buffers)...);
   }
@@ -166,15 +169,18 @@ namespace clue {
   }
 
   template <std::size_t Ndim>
-  inline PointsHost<Ndim>::PointsHost(int32_t n_points, float* coordinates, float* weights, int* output)
+  inline PointsHost<Ndim>::PointsHost(int32_t n_points,
+                                      float* coordinates,
+                                      float* weights,
+                                      int* output)
       : m_view{}, m_size{n_points} {
     soa::host::partitionSoAView<Ndim>(m_view, n_points, coordinates, weights, output);
   }
 
   template <std::size_t Ndim>
   template <concepts::Pointer... TBuffers>
-    requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-  inline PointsHost<Ndim>::PointsHost(int32_t n_points, TBuffers... buffers)
+  requires(sizeof...(TBuffers) == Ndim + 2 and
+           Ndim > 1) inline PointsHost<Ndim>::PointsHost(int32_t n_points, TBuffers... buffers)
       : m_view{}, m_size{n_points} {
     soa::host::partitionSoAView<Ndim>(m_view, n_points, buffers...);
   }

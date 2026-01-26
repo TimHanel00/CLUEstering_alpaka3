@@ -6,8 +6,6 @@
 #include "CLUEstering/data_structures/internal/CoordinateExtremes.hpp"
 #include "CLUEstering/data_structures/internal/Tiles.hpp"
 #include "CLUEstering/internal/algorithm/algorithm.hpp"
-#include "CLUEstering/internal/nostd/maximum.hpp"
-#include "CLUEstering/internal/nostd/minimum.hpp"
 #include <algorithm>
 
 namespace clue::detail {
@@ -19,38 +17,39 @@ namespace clue::detail {
                          int32_t nPerDim) {
     for (size_t dim{}; dim != Ndim; ++dim) {
       auto coords = h_points.coords(dim);
-
-
-      min_max->min(dim) = *std::min_element(coords.begin(), coords.end());
-      min_max->max(dim) = *std::max_element(coords.begin(), coords.end());
+      auto stdView = std::span<const float>(coords.data(), coords.getExtents().product());
+      min_max->min(dim) = *std::ranges::min_element(stdView);
+      min_max->max(dim) = *std::ranges::max_element(stdView);
 
       const float tileSize = (min_max->max(dim) - min_max->min(dim)) / nPerDim;
       tile_sizes[dim] = tileSize;
     }
   }
 
-  template <concepts::Queue TQueue,std::size_t Ndim,typename TDev>
-  void compute_tile_size(TQueue const &queue,internal::CoordinateExtremes<Ndim>* min_max,
+  template <concepts::Queue TQueue, std::size_t Ndim, typename TDev>
+  void compute_tile_size(TQueue const& queue,
+                         internal::CoordinateExtremes<Ndim>* min_max,
                          alpaka::concepts::IMdSpan auto tile_sizes,
-                         const PointsDevice<Ndim,TDev>& dev_points,
+                         const PointsDevice<Ndim, TDev>& dev_points,
                          uint32_t nPerDim) {
     for (size_t dim{}; dim != Ndim; ++dim) {
       auto d_max = make_device_buffer<float>(queue, 1U);
       auto d_min = make_device_buffer<float>(queue, 1U);
 
       auto coords = dev_points.coords(dim);
-      auto mdSpan=alpaka::makeMdSpan(coords.data(),coords.size());
-      alpaka::onHost::reduce(queue, DevicePool::exec(),
-                       std::numeric_limits<float>::lowest(),
-                       d_max.data(),
-                       alpaka::math::max,
-                       mdSpan);
+      alpaka::onHost::reduce(queue,
+                             DevicePool::exec(),
+                             std::numeric_limits<float>::lowest(),
+                             d_max.data(),
+                             alpaka::math::max,
+                             coords);
 
-      alpaka::onHost::reduce(queue, DevicePool::exec(),
+      alpaka::onHost::reduce(queue,
+                             DevicePool::exec(),
                              std::numeric_limits<float>::max(),
                              d_min.data(),
                              alpaka::math::min,
-                             mdSpan);
+                             coords);
       float h_max{};
       float h_min{};
       alpaka::onHost::memcpy(queue, &h_max, d_max);

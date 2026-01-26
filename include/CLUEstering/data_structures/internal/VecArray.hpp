@@ -46,7 +46,7 @@ namespace clue {
     // thread-safe version of the vector, when used in a CUDA kernel
     template <typename T_Acc>
     ALPAKA_FN_ACC int push_back(const T_Acc& acc, const T& element) {
-      auto previousSize = alpaka::onAcc::atomicAdd(acc, &m_size, 1ul,alpaka::onAcc::scope::block);
+      auto previousSize = alpaka::onAcc::atomicAdd(acc, &m_size, 1ul, alpaka::onAcc::scope::block);
       if (previousSize < maxSize) {
         m_data[previousSize] = element;
         return previousSize;

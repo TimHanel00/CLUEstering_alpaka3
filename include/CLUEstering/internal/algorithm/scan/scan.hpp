@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include "CLUEstering/internal/alpaka/config.hpp"
 #include "CLUEstering/detail/concepts.hpp"
 #include <alpaka/alpaka.hpp>
 
@@ -25,7 +24,9 @@ namespace clue {
     // ci and co may be the same
     T x = active ? ci[i] : 0;
     auto const laneId = static_cast<std::int32_t>(alpaka::onAcc::warp::getLaneIdx(acc));
-    for (int32_t offset = 1; offset < acc.getExtentsOf(alpaka::onAcc::origin::warp, alpaka::onAcc::unit::threads); offset <<= 1) {
+    for (int32_t offset = 1;
+         offset < acc.getExtentsOf(alpaka::onAcc::origin::warp, alpaka::onAcc::unit::threads);
+         offset <<= 1) {
       // Force the exact type for integer types otherwise the compiler will find the template resolution ambiguous.
       using dataType = std::conditional_t<std::is_floating_point_v<T>, T, std::int32_t>;
       T y = alpaka::onAcc::warp::shflUp(acc, static_cast<dataType>(x), offset);
@@ -37,8 +38,10 @@ namespace clue {
   }
 
   template <typename TAcc, typename T>
-  ALPAKA_FN_ACC ALPAKA_FN_INLINE void warpPrefixScan(
-      const TAcc& acc, T* c, int32_t i, bool active = true) {
+  ALPAKA_FN_ACC ALPAKA_FN_INLINE void warpPrefixScan(const TAcc& acc,
+                                                     T* c,
+                                                     int32_t i,
+                                                     bool active = true) {
     warpPrefixScan(acc, c, c, i, active);
   }
 
@@ -46,10 +49,13 @@ namespace clue {
   template <typename TAcc, typename T>
   ALPAKA_FN_ACC ALPAKA_FN_INLINE void blockPrefixScan(
       const TAcc& acc, T const* ci, T* co, int32_t size, T* ws = nullptr) {
-    if constexpr (alpaka::getDeviceKind(acc)!=alpaka::deviceKind::cpu/*cpus contain only one thread*/) {
+    if constexpr (alpaka::getDeviceKind(acc) !=
+                  alpaka::deviceKind::cpu /*cpus contain only one thread*/) {
       const auto warpSize = alpaka::onAcc::warp::getSize(acc);
-      auto const blockDimension(acc.getExtentsOf(alpaka::onAcc::origin::block,alpaka::onAcc::unit::threads));
-      auto const blockThreadIdx(acc.getIdxWithin(alpaka::onAcc::origin::block,alpaka::onAcc::unit::threads));
+      auto const blockDimension(
+          acc.getExtentsOf(alpaka::onAcc::origin::block, alpaka::onAcc::unit::threads));
+      auto const blockThreadIdx(
+          acc.getIdxWithin(alpaka::onAcc::origin::block, alpaka::onAcc::unit::threads));
       ALPAKA_ASSERT_ACC(ws);
       ALPAKA_ASSERT_ACC(size <= warpSize * warpSize);
       ALPAKA_ASSERT_ACC(0 == blockDimension % warpSize);

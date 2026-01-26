@@ -1,7 +1,6 @@
 
 #pragma once
 
-
 #include "CLUEstering/internal/alpaka/memory.hpp"
 #include <alpaka/alpaka.hpp>
 #include <cstddef>
@@ -55,7 +54,8 @@ namespace clue::internal {
     template <::clue::concepts::Queue TQueue>
     SeedArray(TQueue& queue, std::size_t size)
         : m_buffer{make_device_buffer<int32_t>(queue.getDevice(), std::size_t{size})},
-          m_dsize{make_device_buffer<std::size_t>(queue.getDevice(),alpaka::Vec<std::size_t,1u>{1})},
+          m_dsize{
+              make_device_buffer<std::size_t>(queue.getDevice(), alpaka::Vec<std::size_t, 1u>{1})},
           m_size{std::nullopt},
           m_capacity{size},
           m_view{m_buffer.data(), m_dsize.data(), m_capacity} {
@@ -68,7 +68,7 @@ namespace clue::internal {
     ALPAKA_FN_HOST auto size(TQueue& queue) {
       if (!m_size.has_value()) {
         m_size = std::make_optional<std::size_t>();
-        alpaka::onHost::memcpy(queue,makeView(alpaka::api::host,&*m_size,Vec1D{1}), m_dsize);
+        alpaka::onHost::memcpy(queue, makeView(alpaka::api::host, &*m_size, Vec1D{1}), m_dsize);
         alpaka::onHost::wait(queue);
       }
       return *m_size;

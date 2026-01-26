@@ -41,7 +41,7 @@ namespace clue {
       return 1.f;
     } else {
       return m_gaus_amplitude * alpaka::math::exp(-(dist_ij - m_gaus_avg) * (dist_ij - m_gaus_avg) /
-                                          (2 * m_gaus_std * m_gaus_std));
+                                                  (2 * m_gaus_std * m_gaus_std));
     }
   }
 

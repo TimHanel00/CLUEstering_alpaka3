@@ -10,14 +10,15 @@
 
 namespace clue {
 
-  template <typename THost,typename TQueue, std::size_t Ndim>
-  inline void copyToHost(THost &host_dev,TQueue& queue,
+  template <typename THost, typename TQueue, std::size_t Ndim>
+  inline void copyToHost(THost& host_dev,
+                         TQueue& queue,
                          PointsHost<Ndim>& h_points,
                          const PointsDevice<Ndim, DevType<TQueue>>& d_points) {
     alpaka::onHost::memcpy(
         queue,
         //@TODO here we can use inplace alpaka functions no wrappers (mayby think about the mapped allocation)
-        alpaka::makeView(alpaka::api::host,h_points.m_view.cluster_index, Vec1D{h_points.size()}),
+        alpaka::makeView(alpaka::api::host, h_points.m_view.cluster_index, Vec1D{h_points.size()}),
         //@TODO here we need alpaka functions
         alpaka::makeView(queue.getDevice(), d_points.m_view.cluster_index, Vec1D{h_points.size()}));
     h_points.mark_clustered();
@@ -29,7 +30,7 @@ namespace clue {
 
     alpaka::onHost::memcpy(
         queue,
-        alpaka::makeView(alpaka::api::host,h_points.m_view.cluster_index, Vec1D{h_points.size()}),
+        alpaka::makeView(alpaka::api::host, h_points.m_view.cluster_index, Vec1D{h_points.size()}),
         alpaka::makeView(queue.getDevice(), d_points.m_view.cluster_index, Vec1D{h_points.size()}));
     h_points.mark_clustered();
 
@@ -44,11 +45,13 @@ namespace clue {
       alpaka::onHost::memcpy(
           queue,
           alpaka::makeView(queue.getDevice(), d_points.m_view.coords[Dim], Vec1D{h_points.size()}),
-          alpaka::makeView(alpaka::api::host,h_points.m_view.coords[Dim], Vec1D{Ndim * h_points.size()}));
+          alpaka::makeView(
+              alpaka::api::host, h_points.m_view.coords[Dim], Vec1D{Ndim * h_points.size()}));
     });
-    alpaka::onHost::memcpy(queue,
-                   alpaka::makeView(queue.getDevice(), d_points.m_view.weight, Vec1D{h_points.size()}),
-                   alpaka::makeView(alpaka::api::host,h_points.m_view.weight, Vec1D{h_points.size()}));
+    alpaka::onHost::memcpy(
+        queue,
+        alpaka::makeView(queue.getDevice(), d_points.m_view.weight, Vec1D{h_points.size()}),
+        alpaka::makeView(alpaka::api::host, h_points.m_view.weight, Vec1D{h_points.size()}));
   }
 
   template <concepts::Queue TQueue, std::size_t Ndim>
@@ -59,11 +62,13 @@ namespace clue {
       alpaka::onHost::memcpy(
           queue,
           alpaka::makeView(queue.getDevice(), d_points.m_view.coords[Dim], Vec1D{h_points.size()}),
-          alpaka::makeView(alpaka::api::host,h_points.m_view.coords[Dim], Vec1D{Ndim * h_points.size()}));
+          alpaka::makeView(
+              alpaka::api::host, h_points.m_view.coords[Dim], Vec1D{Ndim * h_points.size()}));
     });
-    alpaka::onHost::memcpy(queue,
-                   alpaka::makeView(queue.getDevice(), d_points.m_view.weight, Vec1D{h_points.size()}),
-                   alpaka::makeView(alpaka::api::host,h_points.m_view.weight, Vec1D{h_points.size()}));
+    alpaka::onHost::memcpy(
+        queue,
+        alpaka::makeView(queue.getDevice(), d_points.m_view.weight, Vec1D{h_points.size()}),
+        alpaka::makeView(alpaka::api::host, h_points.m_view.weight, Vec1D{h_points.size()}));
 
     return d_points;
   }

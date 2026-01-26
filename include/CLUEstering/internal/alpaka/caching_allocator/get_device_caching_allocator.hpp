@@ -9,14 +9,13 @@
 #include "CLUEstering/internal/alpaka/caching_allocator/caching_allocator.hpp"
 #include "CLUEstering/internal/alpaka/devices.hpp"
 
-
 namespace clue {
 
   namespace detail {
 
-    template <typename TDevice,typename TQueue>
-    auto allocate_device_allocators(TDevice const&,TQueue const &) {
-      using Allocator = CachingAllocator<Device,TQueue>;
+    template <typename TDevice, typename TQueue>
+    auto allocate_device_allocators(TDevice const&, TQueue const& queue) {
+      using Allocator = CachingAllocator<TDevice, TQueue>;
       auto const& devices = DevicePool::get().devices();
       auto const size = devices.size();
 
@@ -26,6 +25,7 @@ namespace clue {
       // construct the objects in the storage
       for (size_t index = 0; index < size; ++index) {
         new (ptr + index) Allocator(devices[index],
+                                    queue,
                                     config::binGrowth,
                                     config::minBin,
                                     config::maxBin,
@@ -48,12 +48,12 @@ namespace clue {
 
   }  // namespace detail
 
-  template <typename TDevice,typename TQueue>
-  inline auto getDeviceCachingAllocator(TDevice const &device,TQueue const &queue) -> auto& {
+  template <typename TDevice, typename TQueue>
+  inline auto getDeviceCachingAllocator(TDevice const& device, TQueue const& queue) -> auto& {
     // initialise all allocators, one per device
-    static auto allocators = detail::allocate_device_allocators(device,queue);
+    static auto allocators = detail::allocate_device_allocators(device, queue);
 
-    size_t const index = DevicePool::deviceAt(device);
+    size_t const index = DevicePool::indexOf(device);
     // the public interface is thread safe
     return allocators[index];
   }

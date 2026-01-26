@@ -27,12 +27,12 @@ namespace clue {
   /// and runs the clustering algorithm on host or device points.
   ///
   /// @tparam Ndim The number of dimensions of the points to cluster
-  template <concepts::Queue TQueue,std::size_t Ndim>
+  template <concepts::Queue TQueue, std::size_t Ndim>
   class Clusterer {
   private:
     using CoordinateExtremes = internal::CoordinateExtremes<Ndim>;
     using TPointsHost = PointsHost<Ndim>;
-    using TDev=DevType<TQueue>;
+    using TDev = DevType<TQueue>;
     using TPointsDevice = PointsDevice<Ndim, TDev>;
     using TilesDevice = internal::Tiles<Ndim, TDev>;
     using FollowersDevice = Followers<TDev>;
@@ -182,7 +182,7 @@ namespace clue {
     ///
     /// @param wrappedCoordinates Array of wrapped coordinates, where 1 means periodic and 0 means non-periodic
     template <std::ranges::contiguous_range TRange>
-      requires std::integral<std::ranges::range_value_t<TRange>>
+    requires std::integral<std::ranges::range_value_t<TRange>>
     void setWrappedCoordinates(const TRange& wrapped_coordinates);
     /// @brief Specify which coordinates are periodic
     ///

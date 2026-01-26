@@ -12,8 +12,7 @@
 namespace clue {
 
   template <std::size_t Ndim>
-  inline Centroid<Ndim> cluster_centroid(const PointsHost<Ndim>& points,
-                                         std::size_t cluster_id) {
+  inline Centroid<Ndim> cluster_centroid(const PointsHost<Ndim>& points, std::size_t cluster_id) {
     assert(points.clustered());
     auto cluster_ids = points.clusterIndexes();
     auto clusters = get_clusters(points);

@@ -22,8 +22,9 @@ namespace clue {
   template <std::size_t NDim>
   ::clue::PointsHost<NDim> read_output(const std::string& file_path);
 
-  template <concepts::Queue TQueue,std::size_t Ndim>
-  void copyToHost(TQueue& queue,PointsHost<Ndim>& h_points,
+  template <concepts::Queue TQueue, std::size_t Ndim>
+  void copyToHost(TQueue& queue,
+                  PointsHost<Ndim>& h_points,
                   const PointsDevice<Ndim, DevType<TQueue>>& d_points);
 
   template <concepts::Queue TQueue, std::size_t Ndim>
@@ -100,8 +101,8 @@ namespace clue {
     /// @param n_points The number of points
     /// @param buffers The pre-allocated buffers to use for the points data
     template <std::ranges::contiguous_range... TBuffers>
-      requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-    PointsHost(int32_t n_points, TBuffers&&... buffers);
+    requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
+        PointsHost(int32_t n_points, TBuffers&&... buffers);
 
     /// @brief Constructs a container for the points allocated on the host using interleaved data
     ///
@@ -124,9 +125,9 @@ namespace clue {
     ///
     /// @param n_points The number of points
     /// @param buffers The pre-allocated buffers to use for the points data
-    template < concepts::Pointer... TBuffers>
-      requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
-    PointsHost(int32_t n_points, TBuffers... buffers);
+    template <concepts::Pointer... TBuffers>
+    requires(sizeof...(TBuffers) == Ndim + 2 and Ndim > 1)
+        PointsHost(int32_t n_points, TBuffers... buffers);
 
     PointsHost(const PointsHost&) = delete;
     PointsHost& operator=(const PointsHost&) = delete;
@@ -201,7 +202,7 @@ namespace clue {
 
     void mark_clustered() { m_clustered = true; }
 
-    template <concepts::Queue _TQueue,std::size_t _Ndim>
+    template <concepts::Queue _TQueue, std::size_t _Ndim>
     friend class Clusterer;
     template <concepts::Queue _TQueue, std::size_t _Ndim>
     friend void copyToHost(_TQueue& queue,
