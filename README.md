@@ -21,11 +21,12 @@ CLUE combines the flexibility of density-based clustering with the generality of
 CLUE integrates point weights directly into the computation of local densities—making weights an intrinsic part of the clustering logic rather than an external modifier.
 
 CLUE is also designed for parallel execution, scaling linearly with problem size and performing efficiently on massively parallel architectures such as **GPUs** and **FPGAs**.  
-To maximize hardware portability and performance, CLUEstering’s backend is implemented using [**alpaka**](https://github.com/alpaka-group/alpaka),
+To maximize hardware portability and performance, CLUEstering’s backend is implemented using [**alpaka 3**](https://github.com/alpaka-group/alpaka3),
 a high-efficiency abstraction library for performance portability across CPUs, GPUs, and other accelerators.
 
 ## Installation
 ### C++ API
+TODO refactor installation requirements potentially add cmake presets
 CLUEstering can be installed via **CMake**. It requires a C++20 compliant compiler and CMake 3.16 or higher.
 To install CLUEstering globally on your system, first clone the repository or download on the the release
 tarballs from the [archive](https://github.com/cms-patatrack/CLUEstering/releases), then install with the following commands:
@@ -40,10 +41,7 @@ Then you can link CLUEstering to your project using CMake's `find_package`:
 find_package(CLUEstering REQUIRED)
 add_executable(your_target your_source.cpp)
 target_link_libraries(your_target PRIVATE CLUEstering::CLUEstering)
-target_compile_options(your_target PRIVATE ALPAKA_FLAG)
 ```
-where the `ALPAKA_FLAG` is a CMake variable used to specify the desired alpaka backend. For the list of available backends and their corresponding flags, 
-please look at the subsetion below.
 
 ### Python API
 ### From PyPi
@@ -66,32 +64,35 @@ CLUEstering leverages the **alpaka** library to provide support for multiple bac
 The table below lists the currently supported backends and the corresponding CMake flags to enable them:
 | Backend        | CMake Flag           |
 |----------------|----------------------|
-| Serial         | `ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED` |
-| OpenMP         | `ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLED` |
-| TBB            | `ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLED`  |
-| CUDA           | `ALPAKA_ACC_GPU_CUDA_T_SEQ_ENABLED` |
-| HIP            | `ALPAKA_ACC_GPU_HIP_T_SEQ_ENABLED` |  
+| Serial         | `-- enabled by default --` |
+| OpenMP         | `ALPAKA_DEP_OMP` |
+| TBB            | `ALPAKA_DEP_TBB`  |
+| CUDA           | `ALPAKA_DEP_CUDA` |
+| HIP            | `ALPAKA_DEP_HIP` |  
 
+Note: This is currently only supported for 
 For the list of supported compiler versions for each backend, please refer to the
-[alpaka documentation](https://github.com/alpaka-group/alpaka).
+
+[alpaka documentation](https://github.com/alpaka-group/alpaka3).
 
 ## Quick example
 ### C++ API
-Here is basic example of how to use CLUEstering in C++:
+Here is basic example of how to use CLUEstering in C++ (this is already working within the port):
 ```cpp
 
 #include <CLUEstering/CLUEstering.hpp>
 
 int main() {
   // Obtain the queue, which is used for allocations and kernel launches.
-  auto queue = clue::get_queue(0u);
+  // its recommended to use a blocking queue for now
+  auto queue = clue::get_queue(0u, alpaka::queueKind::blocking);
 
   // Allocate the points on the host
   clue::PointsHost<2> points = clue::read_csv<2>(queue, "data.csv");
 
   // Define the parameters for the clustering and construct the clusterer.
   const float distance = 20.f, density_cutoff = 10.f;
-  clue::Clusterer<2> clusterer(queue, distance, density_cutoff);
+  clue::Clusterer<ALPAKA_TYPEOF(queue), 2> algo(queue, dc, density_cutoff);
 
   // Launch the clustering
   // The results will be stored in the `clue::PointsHost` object
@@ -103,6 +104,7 @@ int main() {
 This example reads a set of 2D points from a CSV file, performs clustering using CLUE, and retrieves the cluster assignments for each point.
 For more detailed examples and usage instructions, please refer to the [documentation](https://cms-patatrack.github.io/CLUEstering/).
 ### Python API
+TODO for alpaka 3 port (python bindings are not ported yet)
 Here is a basic example of how to use CLUEstering in Python:
 ```python
 import CLUEstering as clue
