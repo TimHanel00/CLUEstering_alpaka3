@@ -4,13 +4,13 @@ project(
   CLUEstering
   LANGUAGES CXX
   VERSION 2.9.0)
-find_package(alpaka CONFIG QUIET)
+find_package(alpaka CONFIG)
 if(NOT alpaka_FOUND)
   include(FetchContent)
   FetchContent_Declare(
           alpaka
-          GIT_REPOSITORY https://github.com/alpaka-group/alpaka3.git
-          GIT_TAG e23ec28541f4ebfc27b3a69f1e0de5ab0c1e9414
+          GIT_REPOSITORY https://github.com/TimHanel00/alpaka3.git
+          GIT_TAG c59fa3e4b60ffdf9a8ca7abe3ef651187d3a3a2a
   )
   FetchContent_MakeAvailable(alpaka)
 
@@ -21,58 +21,72 @@ if(BUILD_PYTHON)
   add_subdirectory(extern/pybind11)
   add_subdirectory(CLUEstering/BindingModules)
 endif()
-
-# generate version header
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in
+if(NOT TARGET CLUEstering::CLUEstering)
+  # generate version header
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in
                ${CMAKE_CURRENT_BINARY_DIR}/CLUEstering/version.hpp @ONLY)
 
-set(CLUE_GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/CLUEstering")
+  set(CLUE_GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/CLUEstering")
+  # old alias, to be removed in future versions
+  add_library(CLUEstering INTERFACE)
+  add_library(CLUEstering::CLUEstering ALIAS CLUEstering)
 
-# old alias, to be removed in future versions
-add_library(CLUEstering INTERFACE)
-target_include_directories(
-  CLUEstering
-  INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-            $<BUILD_INTERFACE:${CLUE_GENERATED_INCLUDE_DIR}>
-            $<INSTALL_INTERFACE:include>)
+  target_include_directories(CLUEstering
+        INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CLUE_GENERATED_INCLUDE_DIR}>
+        $<INSTALL_INTERFACE:include>
+  )
 
-# properly namespaced target
-add_library(CLUEstering::CLUEstering ALIAS CLUEstering)
+  # IMPORTANT: only mention alpaka in the BUILD interface (export-safe)
+  target_link_libraries(CLUEstering
+        INTERFACE
+        $<BUILD_INTERFACE:alpaka::alpaka>)
 
-install(DIRECTORY include/ DESTINATION include)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CLUEstering/version.hpp
+
+  install(DIRECTORY include/ DESTINATION include)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CLUEstering/version.hpp
         DESTINATION include/CLUEstering)
-# export old namespace target
-install(TARGETS CLUEstering EXPORT CLUEsteringTargets-clue)
-install(
+  #@TODO Issue: current install/export conflicts with alpaka_finalize()
+  #@TODO currently either add alpaka as a additional dependency to your target + alpaka_finalize(),
+  #@TODO this way you can export CLUEstering with link $<BUILD_INTERFACE:alpaka::alpaka)
+  #@TODO the current version only allows builds in tree (here you only need to link CLUEstering::CLUEstering to your targets)
+  #
+  ## export old namespace target
+  install(TARGETS CLUEstering EXPORT CLUEsteringTargets-clue)
+  install(
   EXPORT CLUEsteringTargets-clue
   FILE CLUEsteringTargets-clue.cmake
   NAMESPACE clue::
   DESTINATION lib/cmake/CLUEstering)
-# export new namespace target
-install(TARGETS CLUEstering EXPORT CLUEsteringTargets)
-install(
+  # export new namespace target
+  install(TARGETS CLUEstering EXPORT CLUEsteringTargets)
+  install(
   EXPORT CLUEsteringTargets
   FILE CLUEsteringTargets.cmake
   NAMESPACE CLUEstering::
   DESTINATION lib/cmake/CLUEstering)
+  file(GLOB _cmake_files "${CMAKE_CURRENT_SOURCE_DIR}/cmake/*.cmake")
+  foreach(_cmake_file ${_cmake_files})
+  include(${_cmake_file})
+  endforeach()
+  set(CLUEstering_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+  set(CLUEstering_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+  set(CLUEstering_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 
-set(CLUEstering_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
-set(CLUEstering_VERSION_MINOR ${PROJECT_VERSION_MINOR})
-set(CLUEstering_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
+  include(CMakePackageConfigHelpers)
+  write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/CLUEsteringConfigVersion.cmake"
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY AnyNewerVersion)
-configure_package_config_file(
+  configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CLUEsteringConfig.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/CLUEsteringConfig.cmake"
   INSTALL_DESTINATION lib/cmake/CLUEstering)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/CLUEsteringConfig.cmake"
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/CLUEsteringConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/CLUEsteringConfigVersion.cmake"
         DESTINATION lib/cmake/CLUEstering)
+endif ()
 option(CLUE_Examples "Build CLUE examples" OFF)
 
 if(CLUE_Examples)

@@ -53,7 +53,7 @@ namespace clue {
       using HostDevice = ALPAKA_TYPEOF(alpaka::onHost::makeHostDevice());
 
       // --- host device (constant) ---
-      static auto hostDev() -> HostDevice const& {
+      static auto hostDev() -> HostDevice & {
         static HostDevice hd = alpaka::onHost::makeHostDevice();
         return hd;
       }

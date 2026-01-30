@@ -74,11 +74,11 @@ namespace clue::detail {
 
     auto min_max = make_host_buffer<internal::CoordinateExtremes<Ndim>>();
     auto tile_sizes = make_host_buffer<float>(Ndim);
-    detail::compute_tile_size(min_max.data(), tile_sizes.data(), points, n_per_dim);
+    detail::compute_tile_size(queue,min_max.data(), tile_sizes.getMdSpan(), points, n_per_dim);
 
-    alpaka::onHost::memcpy(queue, tiles->minMax(), min_max);
-    alpaka::onHost::memcpy(queue, tiles->tileSize(), tile_sizes);
-    alpaka::onHost::memcpy(queue, tiles->wrapped(), alpaka::View(wrapped_coordinates.data(), Ndim));
+    alpaka::onHost::memcpy(queue, tiles->m_minmax, min_max);
+    alpaka::onHost::memcpy(queue, tiles->m_minmax, tile_sizes);
+    alpaka::onHost::memcpy(queue, tiles->m_tilesizes, wrapped_coordinates);
   }
 
 }  // namespace clue::detail

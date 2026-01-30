@@ -6,8 +6,7 @@
 #include <span>
 
 namespace clue::detail {
-
-  inline auto compute_nclusters(std::span<const int> cluster_indexes) {
+  inline auto compute_nclusters(std::span<int> cluster_indexes) {
     return std::reduce(cluster_indexes.begin(),
                        cluster_indexes.end(),
                        std::numeric_limits<int>::lowest(),

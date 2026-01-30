@@ -58,7 +58,23 @@ namespace clue {
           "Invalid clustering parameters. The parameters must be positive.");
     }
   }
+  template <concepts::Queue TQueue, std::size_t Ndim>
+  template <typename Kernel,
+          concepts::distance_metric<Ndim> DistanceMetric>
+          inline void Clusterer<TQueue, Ndim>::make_clusters(
+                   TPointsHost& h_points,
+                   const DistanceMetric& metric,
+                   const Kernel& kernel,
+                   std::size_t block_size){
+    auto device=DevicePool::deviceAt(0U); //get the first device
+    auto queue=get_queue(device);
+    auto d_points = PointsDevice<Ndim,ALPAKA_TYPEOF(device)>{device, h_points.size()};
 
+    setup(queue, h_points, d_points);
+    make_clusters_impl(h_points, d_points, metric, kernel, queue, block_size);
+    alpaka::onHost::wait(queue);
+
+  }
   template <concepts::Queue TQueue, std::size_t Ndim>
   template <typename Kernel, concepts::distance_metric<Ndim> DistanceMetric>
   inline void Clusterer<TQueue, Ndim>::make_clusters(TQueue& queue,
@@ -66,7 +82,8 @@ namespace clue {
                                                      const DistanceMetric& metric,
                                                      const Kernel& kernel,
                                                      std::size_t block_size) {
-    auto d_points = PointsDevice(queue, h_points.size());
+    auto device=queue.getDevice();
+    auto d_points = PointsDevice<Ndim,ALPAKA_TYPEOF(device)>{device, h_points.size()};
 
     setup(queue, h_points, d_points);
     make_clusters_impl(h_points, d_points, metric, kernel, queue, block_size);
@@ -147,7 +164,7 @@ namespace clue {
     detail::findClusterSeeds(
         queue, threadSpec, m_seeds.value(), dev_points.view(), m_seed_dc, metric, m_rhoc, n_points);
 
-    m_followers->template fill(queue, dev_points);
+    m_followers->fill(queue, dev_points);
     detail::assignPointsToClusters(
         queue, block_size, m_seeds.value(), m_followers->view(), dev_points.view());
     copyToHost(queue, h_points, dev_points);

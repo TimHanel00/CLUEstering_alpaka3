@@ -3,13 +3,14 @@
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-
-TEST_CASE("Test validation scores on toy detector dataset") {
+using TestApis =
+    std::decay_t<decltype(alpaka::onHost::allBackends(alpaka::onHost::enabledApis, alpaka::exec::enabledExecutors))>;
+DOCTEST_TEST_CASE_TEMPLATE("Test validation scores on toy detector dataset",Api,TestApis) {
   auto queue = clue::get_queue(0u);
 
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/toyDetector_1000.csv";
-  clue::PointsHost<2> points = clue::read_csv<2>(queue, test_file_path);
-  clue::Clusterer<2> clusterer(queue, 4.f, 2.5f, 4.f);
+  clue::PointsHost<2> points = clue::read_csv<2>(test_file_path);
+  clue::Clusterer<ALPAKA_TYPEOF(queue),2> clusterer(queue, 4.f, 2.5f, 4.f);
   clusterer.make_clusters(queue, points);
 
   SUBCASE("Test computation of silhouette score on all points singularly") {

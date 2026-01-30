@@ -46,7 +46,7 @@ namespace clue {
   class PointsHost : public internal::points_interface<PointsHost<Ndim>> {
     std::optional<ALPAKA_TYPEOF(make_host_buffer<std::byte>(std::size_t{}))> m_buffer;
     PointsView<Ndim> m_view;
-    std::optional<ClusterProperties<alpaka::api::Host>> m_clusterProperties;
+    std::optional<ClusterProperties> m_clusterProperties;
     std::optional<std::size_t> m_nclusters;
     int32_t m_size;
     bool m_clustered = false;

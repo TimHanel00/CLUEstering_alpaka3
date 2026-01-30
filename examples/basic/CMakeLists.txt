@@ -8,19 +8,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 #find_package(CLUEstering REQUIRED)
 #find_package(alpaka REQUIRED)
-
-# include the helper
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake")
-include(AddAlpakaExecutors)
-
 add_alpaka_executor_binaries(
         PREFIX basic
         SOURCES main.cpp
-        LINK_LIBS CLUEstering::CLUEstering alpaka::alpaka
+        LINK_LIBS CLUEstering::CLUEstering
         OUT_TARGETS created_binaries
 )
 foreach(tgt IN LISTS created_binaries)
-    alpaka_finalize("${tgt}")
+    clue_finalize("${tgt}")
 endforeach()
 #if(alpaka_DEP_CUDA)
 #    set(tgt "basic_cuda")

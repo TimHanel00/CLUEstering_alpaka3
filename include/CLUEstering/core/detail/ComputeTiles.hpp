@@ -17,7 +17,7 @@ namespace clue::detail {
                          int32_t nPerDim) {
     for (size_t dim{}; dim != Ndim; ++dim) {
       auto coords = h_points.coords(dim);
-      auto stdView = std::span<const float>(coords.data(), coords.getExtents().product());
+      auto stdView = std::span<const float>(coords.data(), coords.size());
       min_max->min(dim) = *std::ranges::min_element(stdView);
       min_max->max(dim) = *std::ranges::max_element(stdView);
 
@@ -37,23 +37,24 @@ namespace clue::detail {
       auto d_min = make_device_buffer<float>(queue, 1U);
 
       auto coords = dev_points.coords(dim);
+      auto devCoordsView=alpaka::makeView(queue,coords.data(), Vec1D{coords.size()});
       alpaka::onHost::reduce(queue,
                              DevicePool::exec(),
                              std::numeric_limits<float>::lowest(),
-                             d_max.data(),
-                             alpaka::math::max,
-                             coords);
+                             d_max,
+                             internal::simdMax(),
+                             devCoordsView);
 
       alpaka::onHost::reduce(queue,
                              DevicePool::exec(),
                              std::numeric_limits<float>::max(),
-                             d_min.data(),
-                             alpaka::math::min,
-                             coords);
+                             d_min,
+                             internal::simdMin(),
+                             devCoordsView);
       float h_max{};
       float h_min{};
-      alpaka::onHost::memcpy(queue, &h_max, d_max);
-      alpaka::onHost::memcpy(queue, &h_min, d_min);
+      alpaka::onHost::memcpy(queue, makeView(alpaka::api::host,&h_max,Vec1D{1U}), d_max);
+      alpaka::onHost::memcpy(queue, makeView(alpaka::api::host,&h_min,Vec1D{1U}), d_min);
       min_max->min(dim) = h_min;
       min_max->max(dim) = h_max;
 

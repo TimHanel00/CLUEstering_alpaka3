@@ -3,6 +3,7 @@
 
 #include "CLUEstering/data_structures/AssociationMap.hpp"
 #include "CLUEstering/detail/concepts.hpp"
+#include <CLUEstering/data_structures/PointsDevice.hpp>
 
 namespace clue {
 

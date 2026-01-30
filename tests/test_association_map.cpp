@@ -1,25 +1,17 @@
 
-#if !defined(ALPAKA_ACC_GPU_CUDA_ENABLED) && !defined(ALPAKA_ACC_GPU_HIP_ENABLED)
-
 #include "CLUEstering/data_structures/PointsHost.hpp"
 #include "CLUEstering/data_structures/internal/MakeAssociator.hpp"
 
-#include <numeric>
 #include <ranges>
 #include <span>
 #include <vector>
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-using TestApis = std::decay_t<decltype(allBackends(alpaka::enabledApis, alpaka::exec::enabledExecutors))>;
-
-DOCTEST_TYPED_TEST_CASE("Test binary association map",TestApis) {
-  using Api = TypeParam; //get APIs:
-  const auto host = alpaka::getDevByIdx(alpaka::PlatformCpu{}, 0u);
-  clue::Queue queue(host);
-
+TEST_CASE("Test binary association map") {
+  auto queue=clue::DevicePool::getHost().makeQueue(alpaka::queueKind::blocking);
   const int32_t size = 1000;
-  auto associations = clue::make_host_buffer<int32_t[]>(queue, size);
+  auto associations = clue::make_host_buffer<int32_t>(size);
   std::ranges::transform(
       std::views::iota(0, size), associations.data(), [](auto x) -> int32_t { return x % 2 == 0; });
   auto map =
@@ -67,11 +59,9 @@ DOCTEST_TYPED_TEST_CASE("Test binary association map",TestApis) {
 }
 
 TEST_CASE("Test throwing conditions") {
-  const auto host = alpaka::getDevByIdx(alpaka::PlatformCpu{}, 0u);
-  clue::Queue queue(host);
-
-  const int32_t size = 1000;
-  auto associations = clue::make_host_buffer<int32_t[]>(queue, size);
+  auto queue=clue::get_queue(0u);
+  int32_t size = 1000;
+  auto associations = clue::make_host_buffer<int32_t>(size);
   std::ranges::transform(
       std::views::iota(0, size), associations.data(), [](auto x) -> int32_t { return x % 2 == 0; });
 
@@ -130,7 +120,7 @@ TEST_CASE("Test throwing conditions") {
 TEST_CASE("Test binary host_associator") {
   const int32_t size = 1000;
 
-  auto associations = clue::make_host_buffer<int32_t[]>(size);
+  auto associations = clue::make_host_buffer<int32_t>(size);
   std::ranges::transform(
       std::views::iota(0, size), associations.data(), [](auto x) -> int32_t { return x % 2 == 0; });
   auto map = clue::internal::make_associator(std::span<int32_t>(associations.data(), size), size);
@@ -165,9 +155,3 @@ TEST_CASE("Test binary host_associator") {
     CHECK(std::distance(map.equal_range(1).first, map.equal_range(1).second) == size / 2);
   }
 }
-
-#else
-
-int main() {}
-
-#endif

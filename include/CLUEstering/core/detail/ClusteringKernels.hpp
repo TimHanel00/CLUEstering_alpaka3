@@ -35,7 +35,7 @@ namespace clue::detail {
       auto binId = tiles.getGlobalBinByBin(base_vec);
       auto span = tiles[binId];  //now returns a mdSpan
 
-      auto binSize = tiles[binId].getExtents().product();
+      auto binSize = tiles[binId].size();
 
       for (auto el : span) {
         int32_t j = el;
@@ -128,7 +128,7 @@ namespace clue::detail {
                                                   int32_t point_id) {
     if constexpr (N_ == 0) {
       auto binId = tiles.getGlobalBinByBin(base_vec);
-      auto binSize = tiles[binId].getExtents().product();
+      auto binSize = tiles[binId].size();
 
       for (auto binIter = 0u; binIter < binSize; ++binIter) {
         const auto j = tiles[binId][binIter];
