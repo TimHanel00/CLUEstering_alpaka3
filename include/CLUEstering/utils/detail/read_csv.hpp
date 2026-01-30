@@ -11,8 +11,8 @@
 #include <string>
 
 namespace clue {
-  template <std::size_t NDim, concepts::Queue TQueue>
-  inline PointsHost<NDim> read_csv(TQueue& /*queue*/, const std::string& file_path) {
+  template <std::size_t NDim>
+  inline PointsHost<NDim> read_csv(const std::string& file_path) {
     std::fstream file(file_path);
     if (!file.is_open()) {
       throw std::runtime_error("Could not open file: " + file_path);
@@ -43,8 +43,8 @@ namespace clue {
     }
     return points;
   }
-  template <std::size_t NDim, concepts::Queue TQueue>
-  inline PointsHost<NDim> read_output(TQueue& /*queue*/, const std::string& file_path) {
+  template <std::size_t NDim>
+  inline PointsHost<NDim> read_output(const std::string& file_path) {
     std::fstream file(file_path);
     if (!file.is_open()) {
       throw std::runtime_error("Could not open file: " + file_path);

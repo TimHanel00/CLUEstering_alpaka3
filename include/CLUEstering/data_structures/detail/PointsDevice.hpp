@@ -7,7 +7,7 @@
 #include "CLUEstering/internal/algorithm/reduce/reduce.hpp"
 #include "CLUEstering/internal/alpaka/memory.hpp"
 #include "CLUEstering/internal/meta/apply.hpp"
-
+#include "CLUEstering/internal/alpaka/func.hpp"
 #include <alpaka/alpaka.hpp>
 #include <cassert>
 #include <cstdint>
@@ -260,24 +260,25 @@ namespace clue {
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
   ALPAKA_FN_HOST inline const auto& PointsDevice<Ndim, TDev>::n_clusters() {
-    auto queue = m_device.make_Queue(alpaka::queueKind::blocking);
+    auto queue = clue::get_queue(m_device);
 
     assert(m_clustered &&
            "The points have to be clustered before the cluster properties can be accessed");
     if (!m_nclusters.has_value()) {
       auto cluster_ids = this->clusterIndexes();
-      auto hostBuf = alpaka::onHost::allocHost<int32_t>(m_device, alpaka::Vec{1U});
-      auto devOutBuf = alpaka::onHost::allocLike<int32_t>(m_device, hostBuf);
-
+      auto cluster_id_view=alpaka::makeView(queue,static_cast<int*>(cluster_ids.data()),Vec1D{cluster_ids.size()});
+      int32_t hostVal{0};
+      auto hostView = alpaka::makeView(alpaka::api::host,&hostVal,alpaka::Vec{1U});
+      auto devOutBuf = alpaka::onHost::allocLike(m_device, hostView);
       alpaka::onHost::reduce(queue,
                              DevicePool::exec(),
                              std::numeric_limits<int32_t>::lowest(),
                              devOutBuf,
-                             alpaka::math::max,
-                             cluster_ids);
-      alpaka::onHost::memcpy(queue, hostBuf, devOutBuf);
-
-      m_nclusters = hostBuf[0u] + 1;
+                             internal::simdMax(),
+                             cluster_id_view);
+      alpaka::onHost::memcpy(queue, hostView, devOutBuf);
+      alpaka::onHost::wait(queue);
+      m_nclusters = hostVal + 1;
     }
 
     return m_nclusters.value();

@@ -1,32 +1,35 @@
 
 #pragma once
 #include "CLUEstering/detail/concepts.hpp"
+#include "CLUEstering/internal/alpaka/func.hpp"
 #include <limits>
 #include <span>
-
 namespace clue::internal {
 
-  template <typename TQueue>
+  auto foo(auto j) {
+    return j;
+  }
+  template <typename TQueue,typename T_Elem>
   inline auto make_associator(TQueue& queue,
-                              std::span<const int32_t> associations,
-                              int32_t elements) {
+                              std::span<const T_Elem> associations,
+                              T_Elem elements) {
+    auto device=queue.getDevice();
     alpaka::onHost::SharedBuffer compute_buffer_out =
-        alpaka::onHost::allocHost<int32_t>(alpaka::Vec{1U});
-    alpaka::onHost::allocLikeDeferred(queue, compute_buffer_out);
-    alpaka::onHost::memset(queue, compute_buffer_out, std::numeric_limits<int32_t>::lowest());
-
-    auto in_buf_d = alpaka::onHost::allocLikeDeferred(queue, associations);
-
+        alpaka::onHost::alloc<T_Elem>(device,alpaka::Vec{1U});
+    alpaka::onHost::fill(queue, compute_buffer_out, std::numeric_limits<T_Elem>::lowest());
+    auto in_buf_d = alpaka::onHost::alloc<T_Elem>(device, Vec1D{associations.size()}); //non-const input bufffer required
     alpaka::onHost::memcpy(queue, in_buf_d, associations);
-    const auto bins = alpaka::onHost::reduce(queue,
+    alpaka::onHost::reduce(queue,
                                              DevicePool::exec(),
-                                             std::numeric_limits<int32_t>::lowest(),
+                                             std::numeric_limits<T_Elem>::lowest(),
                                              compute_buffer_out,
-                                             alpaka::math::max,
-                                             in_buf_d) +
-                      1;
+                                             simdMax(),
+                                             in_buf_d);
+    alpaka::onHost::SharedBuffer out_h =
+    alpaka::onHost::allocHost<T_Elem>(alpaka::Vec{1U});
+    alpaka::onHost::memcpy(queue,out_h,compute_buffer_out);
 
-    DevAssociationMap map(queue, elements, bins);
+    DevAssociationMap map(device, elements, out_h[0u] + 1);
     map.fill(queue, elements, associations);
     alpaka::onHost::wait(queue);
     return map;

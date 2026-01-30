@@ -87,7 +87,7 @@ namespace clue::internal {
 
       int32_t* buf_ptr = indexes + offset0;
 
-      return makeMdSpan(buf_ptr, alpaka::Vec{static_cast<size_t>(offset1 - offset0)});
+      return std::span(buf_ptr,static_cast<size_t>(offset1 - offset0));
     }
 
     ALPAKA_FN_ACC inline constexpr float normalizeCoordinate(float coord, int dim) const {

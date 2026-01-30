@@ -10,11 +10,8 @@
 #include "doctest.h"
 
 TEST_CASE("Test host points with internal allocation") {
-  const auto device = clue::get_device(0u);
-  clue::Queue queue(device);
-
   const uint32_t size = 1000;
-  clue::PointsHost<2> h_points(queue, size);
+  clue::PointsHost<2> h_points(size);
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -57,13 +54,10 @@ TEST_CASE("Test host points with internal allocation") {
 }
 
 TEST_CASE("Test host points with external allocation of whole buffer") {
-  const auto device = clue::get_device(0u);
-  clue::Queue queue(device);
-
   const uint32_t size = 1000;
   std::vector<std::byte> buffer(clue::soa::host::computeSoASize<2>(size));
 
-  clue::PointsHost<2> h_points(queue, size, std::span(buffer.data(), buffer.size()));
+  clue::PointsHost<2> h_points(size, std::span(buffer.data(), buffer.size()));
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -106,15 +100,11 @@ TEST_CASE("Test host points with external allocation of whole buffer") {
 }
 
 TEST_CASE("Test host points with external allocation passing two buffers as spans") {
-  const auto device = clue::get_device(0u);
-  clue::Queue queue(device);
-
   const uint32_t size = 1000;
   std::vector<float> input(3 * size);
   std::vector<int> output(2 * size);
 
-  clue::PointsHost<2> h_points(
-      queue, size, std::span(input.data(), input.size()), std::span(output.data(), output.size()));
+  clue::PointsHost<2> h_points(size, std::span(input.data(), input.size()), std::span(output.data(), output.size()));
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -157,14 +147,11 @@ TEST_CASE("Test host points with external allocation passing two buffers as span
 }
 
 TEST_CASE("Test host points with external allocation passing two buffers as vectors") {
-  const auto device = clue::get_device(0u);
-  clue::Queue queue(device);
-
   const uint32_t size = 1000;
   std::vector<float> input(3 * size);
   std::vector<int> output(2 * size);
 
-  clue::PointsHost<2> h_points(queue, size, input, output);
+  clue::PointsHost<2> h_points(size, input, output);
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -207,14 +194,11 @@ TEST_CASE("Test host points with external allocation passing two buffers as vect
 }
 
 TEST_CASE("Test host points with external allocation passing two buffers as pointers") {
-  const auto device = clue::get_device(0u);
-  clue::Queue queue(device);
-
   const uint32_t size = 1000;
   std::vector<float> input(3 * size);
   std::vector<int> output(2 * size);
 
-  clue::PointsHost<2> h_points(queue, size, input.data(), output.data());
+  clue::PointsHost<2> h_points(size, input.data(), output.data());
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -257,16 +241,13 @@ TEST_CASE("Test host points with external allocation passing two buffers as poin
 }
 
 TEST_CASE("Test host points with external allocation passing four buffers as spans") {
-  const auto device = clue::get_device(0u);
-  clue::Queue queue(device);
 
   const uint32_t size = 1000;
   std::vector<float> coords_vector(2 * size);
   std::vector<float> weights_vector(size);
   std::vector<int> cluster_ids_vector(size);
 
-  clue::PointsHost<2> h_points(queue,
-                               size,
+  clue::PointsHost<2> h_points(size,
                                std::span(coords_vector.data(), coords_vector.size()),
                                std::span(weights_vector.data(), weights_vector.size()),
                                std::span(cluster_ids_vector.data(), cluster_ids_vector.size()));
@@ -312,15 +293,13 @@ TEST_CASE("Test host points with external allocation passing four buffers as spa
 }
 
 TEST_CASE("Test host points with external allocation passing four buffers as vectors") {
-  const auto device = clue::get_device(0u);
-  clue::Queue queue(device);
 
   const uint32_t size = 1000;
   std::vector<float> coords_vector(2 * size);
   std::vector<float> weights_vector(size);
   std::vector<int> cluster_ids_vector(size);
 
-  clue::PointsHost<2> h_points(queue, size, coords_vector, weights_vector, cluster_ids_vector);
+  clue::PointsHost<2> h_points(size, coords_vector, weights_vector, cluster_ids_vector);
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -363,16 +342,12 @@ TEST_CASE("Test host points with external allocation passing four buffers as vec
 }
 
 TEST_CASE("Test host points with external allocation passing four buffers as pointers") {
-  const auto device = clue::get_device(0u);
-  clue::Queue queue(device);
-
   const uint32_t size = 1000;
   std::vector<float> coords_vector(2 * size);
   std::vector<float> weights_vector(size);
   std::vector<int> cluster_ids_vector(size);
 
-  clue::PointsHost<2> h_points(
-      queue, size, coords_vector.data(), weights_vector.data(), cluster_ids_vector.data());
+  clue::PointsHost<2> h_points(size, coords_vector.data(), weights_vector.data(), cluster_ids_vector.data());
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -415,10 +390,9 @@ TEST_CASE("Test host points with external allocation passing four buffers as poi
 }
 
 TEST_CASE("Test point accessor") {
-  auto queue = clue::get_queue(0u);
   const uint32_t size = 1000;
 
-  clue::PointsHost<2> points(queue, size);
+  clue::PointsHost<2> points(size);
   std::iota(points.coords(0).begin(), points.coords(1).end(), 0.f);
   std::fill(points.weights().begin(), points.weights().end(), 1.f);
 
@@ -436,23 +410,21 @@ TEST_CASE("Test point accessor") {
 }
 
 TEST_CASE("Test constructor throwing conditions") {
-  auto queue = clue::get_queue(0u);
-  CHECK_THROWS(clue::PointsHost<2>(queue, 0));
-  CHECK_THROWS(clue::PointsHost<2>(queue, -5));
+  CHECK_THROWS(clue::PointsHost<2>(0));
+  CHECK_THROWS(clue::PointsHost<2>(-5));
 }
 
 TEST_CASE("Test coordinate getter throwing conditions") {
   SUBCASE("Const points") {
     const uint32_t size = 1000;
-    auto queue = clue::get_queue(0u);
-    clue::PointsHost<2> points(queue, size);
+    clue::PointsHost<2> points( size);
     CHECK_THROWS(points.coords(3));
     CHECK_THROWS(points.coords(10));
   }
   SUBCASE("Non-const points") {
     const uint32_t size = 1000;
-    auto queue = clue::get_queue(0u);
-    const clue::PointsHost<2> points(queue, size);
+
+    const clue::PointsHost<2> points(size);
     CHECK_THROWS(points.coords(3));
     CHECK_THROWS(points.coords(10));
   }
@@ -461,10 +433,10 @@ TEST_CASE("Test coordinate getter throwing conditions") {
 TEST_CASE("Test cluster properties accessors") {
   auto queue = clue::get_queue(0u);
 
-  clue::PointsHost<2> h_points = clue::read_csv<2>(queue, "../../../data/data_32768.csv");
+  clue::PointsHost<2> h_points = clue::read_csv<2>("../../../data/data_32768.csv");
 
   const float dc{1.3f}, rhoc{10.f}, outlier{1.3f};
-  clue::Clusterer<2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
   algo.make_clusters(queue, h_points);
 
   SUBCASE("Test get number of clusters") {

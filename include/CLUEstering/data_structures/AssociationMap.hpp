@@ -44,7 +44,7 @@ namespace clue {
       std::memset(Base::m_offsets.data(), 0, nbins * sizeof(key_type));
     }
     template <concepts::Queue TQueue>
-    ALPAKA_FN_HOST void fill(TQueue&, size_type size, std::span<const key_type> associations) {
+    ALPAKA_FN_HOST void fill(TQueue&, size_type size, std::span<key_type> associations) {
       // sanity check (optional but recommended)
       ALPAKA_ASSERT(size == associations.size());
 
@@ -84,11 +84,11 @@ namespace clue {
 
     DevAssociationMap() = delete;
 
-    DevAssociationMap(TDev const& dev, size_type nelements, size_type nbins)
-        : Base(make_device_buffer<mapped_type>(dev, nelements),  //index buffer allocation
-               make_device_buffer<key_type>(dev, nbins + 1))     //offset buffer allocation
+    DevAssociationMap(TDev& dev, size_type nelements, size_type nbins)
+        : Base(make_device_buffer<mapped_type>(dev, size_type{nelements}),  //index buffer allocation
+               make_device_buffer<key_type>(dev, size_type{nbins + 1}))     //offset buffer allocation
     {
-      Base::wire_view(nelements, nbins);
+      Base::wire_view(nelements, size_type{nbins});
     }
 
     template <concepts::Queue TQueue>

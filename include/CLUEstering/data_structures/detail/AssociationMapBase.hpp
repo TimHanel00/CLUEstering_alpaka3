@@ -19,10 +19,10 @@ namespace clue {
     template <std::size_t Ndim, typename TDev>
     class Tiles;
 
-    template <typename TQueue>
+    template <typename TQueue,typename T_Elem>
     auto make_associator(TQueue&,
-                         std::span<const int32_t>,
-                         int32_t);  // forward decl with non-auto return if needed
+                         std::span<const T_Elem>,
+                         T_Elem);  // forward decl with non-auto return if needed
   }                                 // namespace internal
 
   namespace detail {
@@ -145,8 +145,8 @@ namespace clue {
       template <std::size_t, class>
       friend class ::clue::internal::Tiles;
 
-      template <typename _TQueue>
-      friend auto ::clue::internal::make_associator(_TQueue&, std::span<const int32_t>, int32_t);
+      template <typename _TQueue,typename T_Elem>
+      friend auto ::clue::internal::make_associator(_TQueue&, std::span<const T_Elem>, T_Elem);
     };
 
   }  // namespace detail

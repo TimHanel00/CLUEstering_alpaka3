@@ -88,7 +88,7 @@ int main() {
   auto queue = clue::get_queue(0u, alpaka::queueKind::blocking);
 
   // Allocate the points on the host
-  clue::PointsHost<2> points = clue::read_csv<2>(queue, "data.csv");
+  clue::PointsHost<2> points = clue::read_csv<2>("data.csv");
 
   // Define the parameters for the clustering and construct the clusterer.
   const float distance = 20.f, density_cutoff = 10.f;

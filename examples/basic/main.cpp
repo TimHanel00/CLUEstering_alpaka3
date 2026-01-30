@@ -7,7 +7,7 @@ auto pointsToString(clue::PointsHost<Dim> const& points_host) -> std::vector<std
   static_assert(Dim <= 4, "Only labels x,y,z,w available.");
   constexpr std::array<char, 4> ar{'x', 'y', 'z', 'w'};
 
-  const std::size_t length = points_host.coords(0u).getExtents().product();
+  const std::size_t length = points_host.coords(0u).size();
   std::vector<std::string> s(length, "(");
 
   for (std::size_t dim = 0; dim < static_cast<std::size_t>(Dim); ++dim) {
@@ -30,9 +30,9 @@ auto pointsToString(clue::PointsHost<Dim> const& points_host) -> std::vector<std
 template <auto Dim>
 void sanityCheckPrint(clue::PointsHost<Dim> const& points_host, uint32_t nr_of_points = 50U) {
   auto clusters_indexes = points_host.clusterIndexes();
-  std::vector<bool> visited(clusters_indexes.getExtents().product(), 0);
+  std::vector<bool> visited(clusters_indexes.size(), 0);
   alpaka::rand::engine::Philox4x32x10 phil;
-  alpaka::rand::distribution::UniformReal<float> dist(0, clusters_indexes.getExtents().product());
+  alpaka::rand::distribution::UniformReal<float> dist(0, clusters_indexes.size());
   std::vector<uint32_t> randomPoints;
   randomPoints.reserve(nr_of_points);
   for (auto k : std::views::iota(0u, nr_of_points)) {
@@ -60,16 +60,15 @@ int main(int argc, char* argv[]) {
   // Obtain the queue, which is used for allocations and kernel launches.
   auto queue = clue::get_queue(0U, alpaka::queueKind::blocking);
   auto device = queue.getDevice();
-
   // Allocate the points on the host and device.
-  clue::PointsHost<2> h_points = clue::read_csv<2>(queue, csv_path);
+  clue::PointsHost<2> h_points = clue::read_csv<2>(csv_path);
 
   auto d_points = clue::PointsDevice<2, ALPAKA_TYPEOF(device)>(device, h_points.size());
 
   // Define the parameters for the clustering
   const float dc = 20.f, rhoc = 10.f, outlier = 20.f;
 
-  clue::Clusterer<ALPAKA_TYPEOF(queue), 2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
 
   // Launch the clustering
   algo.make_clusters(queue, h_points, d_points);
