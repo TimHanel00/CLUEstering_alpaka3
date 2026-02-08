@@ -34,8 +34,6 @@ option(COVERAGE "Enable code coverage" OFF)
 
 enable_testing()
 
-add_subdirectory(cpu)
-
 include(CheckLanguage)
 
 execute_process(

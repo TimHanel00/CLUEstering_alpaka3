@@ -260,7 +260,7 @@ namespace clue {
 
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
   ALPAKA_FN_HOST inline const auto& PointsDevice<Ndim, TDev>::n_clusters() {
-    auto queue = clue::get_queue(m_device);
+    auto queue = get_queue(m_device);
 
     assert(m_clustered &&
            "The points have to be clustered before the cluster properties can be accessed");
