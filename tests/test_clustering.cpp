@@ -28,7 +28,7 @@ TEST_CASE("Test clustering on benchmarking datasets") {
         std::string(TEST_DATA_DIR) + fmt::format("/data_{}.csv", std::pow(2, i));
     clue::PointsHost<2> h_points = clue::read_csv<2>( test_file_path);
     const auto n_points = h_points.size();
-    clue::PointsDevice<2,ALPAKA_TYPEOF(queue)> d_points(queue, n_points);
+    clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, n_points);
 
     algo.make_clusters(queue, h_points, d_points);
 
@@ -43,7 +43,7 @@ TEST_CASE("Test clustering on aniso dataset") {
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/aniso_1000.csv";
   clue::PointsHost<2> h_points = clue::read_csv<2>(test_file_path);
   const auto n_points = h_points.size();
-  clue::PointsDevice<2,ALPAKA_TYPEOF(queue)> d_points(queue, n_points);
+  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, n_points);
 
   const float dc{25.f}, rhoc{5.f}, outlier{23.f};
   clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
@@ -61,7 +61,7 @@ TEST_CASE("Test clustering on sissa 1000 dataset") {
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/sissa_1000.csv";
   clue::PointsHost<2> h_points = clue::read_csv<2>( test_file_path);
   const auto n_points = h_points.size();
-  clue::PointsDevice<2,ALPAKA_TYPEOF(queue)> d_points(queue, n_points);
+  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, n_points);
 
   const float dc{20.f}, rhoc{10.f}, outlier{20.f};
   clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
@@ -78,7 +78,7 @@ TEST_CASE("Test clustering on sissa 4000 dataset") {
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/sissa_4000.csv";
   clue::PointsHost<2> h_points = clue::read_csv<2>(test_file_path);
   const auto n_points = h_points.size();
-  clue::PointsDevice<2,ALPAKA_TYPEOF(queue)> d_points(queue, n_points);
+  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, n_points);
 
   const float dc{20.f}, rhoc{10.f}, outlier{20.f};
   clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
@@ -95,7 +95,7 @@ TEST_CASE("Test clustering on toy detector 1000 dataset") {
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/toyDetector_1000.csv";
   clue::PointsHost<2> h_points = clue::read_csv<2>( test_file_path);
   const auto n_points = h_points.size();
-  clue::PointsDevice<2,ALPAKA_TYPEOF(queue)> d_points(queue, n_points);
+  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, n_points);
 
   const float dc{4.f}, rhoc{2.5f}, outlier{4.f};
   clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
@@ -112,7 +112,7 @@ TEST_CASE("Test clustering on blob dataset") {
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/blob.csv";
   clue::PointsHost<3> h_points = clue::read_csv<3>(test_file_path);
   const auto n_points = h_points.size();
-  clue::PointsDevice<3,ALPAKA_TYPEOF(queue)> d_points(queue, n_points);
+  clue::PointsDevice<3,ALPAKA_TYPEOF(device)> d_points(device, n_points);
 
   const float dc{1.f}, rhoc{5.f}, outlier{2.f};
   clue::Clusterer<ALPAKA_TYPEOF(queue),3> algo(queue, dc, rhoc, outlier);
