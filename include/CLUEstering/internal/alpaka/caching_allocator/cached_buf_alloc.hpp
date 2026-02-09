@@ -27,7 +27,7 @@ namespace clue {
     //! The caching memory allocator implementation for the CPU device
     template <typename TElem, concepts::HostApi TDev, concepts::HostApi TQueue>
     struct CachedBufAlloc<TElem, TDev, TQueue> {
-      ALPAKA_FN_HOST static auto allocCachedBuf(TDev const& dev, TQueue& queue, auto&& extent)
+      ALPAKA_FN_HOST static auto allocCachedBuf(TDev const&, TQueue&, auto&& extent)
           -> auto{
         // non-cached host-only memory
         return alpaka::onHost::allocHost<TElem>(ALPAKA_FORWARD(extent));
@@ -36,7 +36,7 @@ namespace clue {
     //! The caching memory allocator implementation for the pinned host memory (requires the queue to be based on a non-host api)
     template <typename TElem, concepts::HostApi TDev, concepts::NonHostApi TQueue>
     struct CachedBufAlloc<TElem, TDev, TQueue> {
-      ALPAKA_FN_HOST static auto allocCachedBuf(TDev const& dev, TQueue& queue, auto&& extent) {
+      ALPAKA_FN_HOST static auto allocCachedBuf(TDev const&, TQueue& queue, auto&& extent) {
         auto& allocator = getHostCachingAllocator(queue);
         alpaka::Vec const extents_vec = extent;
         size_t size = extents_vec.product();
@@ -50,7 +50,7 @@ namespace clue {
                                             ALPAKA_FORWARD(extent),
                                             std::move(pitchMd),
                                             std::move(deleter)};
-      };
+      }
     };
 
     //! The caching memory allocator implementation for the device
@@ -72,7 +72,7 @@ namespace clue {
         auto pitchMd = alpaka::calculatePitchesFromExtents<TElem>(extents_vec);
         return alpaka::onHost::SharedBuffer{
             api, ptr, ALPAKA_FORWARD(extents_vec), std::move(pitchMd), deleter};
-      };
+      }
     };
 
   }  // namespace traits

@@ -119,7 +119,11 @@ namespace clue {
   template <std::ranges::contiguous_range TRange>
   requires std::integral<std::ranges::range_value_t<TRange>>
   inline void Clusterer<TQueue, Ndim>::setWrappedCoordinates(const TRange& wrapped_coordinates) {
-    std::ranges::copy(wrapped_coordinates, m_wrappedCoordinates.begin());
+    std::ranges::copy_n(
+      wrapped_coordinates.begin(),
+      std::min(wrapped_coordinates.size(), m_wrappedCoordinates.size()),
+      m_wrappedCoordinates.begin()
+    );
   }
   template <concepts::Queue TQueue, std::size_t Ndim>
   template <std::integral... TArgs>
@@ -151,6 +155,7 @@ namespace clue {
     auto threadSpec = alpaka::onHost::FrameSpec{grid_size, block_size};
     detail::computeLocalDensity(
         queue, threadSpec, m_tiles->view(), dev_points.view(), kernel, m_dc, metric, n_points);
+    alpaka::onHost::wait(queue);
     auto seed_candidates = 0UL;
     detail::computeNearestHighers(queue,
                                   threadSpec,
@@ -160,13 +165,15 @@ namespace clue {
                                   metric,
                                   seed_candidates,
                                   n_points);
+    alpaka::onHost::wait(queue);
     detail::setup_seeds(queue, m_seeds, seed_candidates);
     detail::findClusterSeeds(
         queue, threadSpec, m_seeds.value(), dev_points.view(), m_seed_dc, metric, m_rhoc, n_points);
-
+    alpaka::onHost::wait(queue);
     m_followers->fill(queue, dev_points);
     detail::assignPointsToClusters(
         queue, block_size, m_seeds.value(), m_followers->view(), dev_points.view());
+    alpaka::onHost::wait(queue);
     copyToHost(queue, h_points, dev_points);
     h_points.mark_clustered();
     dev_points.mark_clustered();
@@ -184,11 +191,11 @@ namespace clue {
 
     const std::size_t grid_size = alpaka::divCeil(n_points, block_size);
     auto work_division = alpaka::onHost::FrameSpec{grid_size, block_size};
-
+    alpaka::onHost::wait(queue);
     detail::computeLocalDensity(
         queue, work_division, m_tiles->view(), dev_points.view(), kernel, m_dc, metric, n_points);
     auto seed_candidates = 0UL;
-
+    alpaka::onHost::wait(queue);
     detail::computeNearestHighers(queue,
                                   work_division,
                                   m_tiles->view(),
@@ -199,7 +206,7 @@ namespace clue {
                                   n_points);
 
     detail::setup_seeds(queue, m_seeds, seed_candidates);
-
+    alpaka::onHost::wait(queue);
     detail::findClusterSeeds(queue,
                              work_division,
                              m_seeds.value(),
@@ -210,7 +217,7 @@ namespace clue {
                              n_points);
 
     m_followers->template fill(queue, dev_points);
-
+    alpaka::onHost::wait(queue);
     detail::assignPointsToClusters(
         queue, block_size, m_seeds.value(), m_followers->view(), dev_points.view());
 

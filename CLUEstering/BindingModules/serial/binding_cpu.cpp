@@ -19,19 +19,19 @@ namespace alpaka_serial_sync {
 
   void listDevices(const std::string& backend) {
     const char tab = '\t';
-    const std::vector<Device> devices = alpaka::getDevs(clue::Platform{});
+    const auto devices = clue::DevicePool::devices();
     if (devices.empty()) {
       std::cout << "No devices found for the " << backend << " backend." << std::endl;
       return;
     } else {
       std::cout << backend << " devices found: \n";
       for (auto i = 0u; i < devices.size(); ++i) {
-        std::cout << tab << "device " << i << ": " << alpaka::getName(devices[i]) << '\n';
+        std::cout << tab << "device " << i << ": " << alpaka::onHost::getName(devices[i]) << '\n';
       }
     }
   }
 
-  template <clue::concepts::convolutional_kernel Kernel>
+  template <typename Kernel>
   void mainRun(float dc,
                float rhoc,
                float dm,
@@ -54,138 +54,137 @@ namespace alpaka_serial_sync {
 
     // Running the clustering algorithm
     switch (Ndim) {
-      [[unlikely]] case (1):
-        run<1, Kernel>(dc,
-                       rhoc,
-                       dm,
-                       seed_dc,
-                       pPBin,
-                       std::move(wrapped),
-                       std::make_tuple(pData, pResults),
-                       n_points,
-                       kernel,
-                       queue,
-                       block_size);
-        return;
-      [[likely]] case (2):
-        run<2, Kernel>(dc,
-                       rhoc,
-                       dm,
-                       seed_dc,
-                       pPBin,
-                       std::move(wrapped),
-                       std::make_tuple(pData, pResults),
-                       n_points,
-                       kernel,
-                       queue,
-                       block_size);
-        return;
-      [[likely]] case (3):
-        run<3, Kernel>(dc,
-                       rhoc,
-                       dm,
-                       seed_dc,
-                       pPBin,
-                       std::move(wrapped),
-                       std::make_tuple(pData, pResults),
-                       n_points,
-                       kernel,
-                       queue,
-                       block_size);
-        return;
-      [[unlikely]] case (4):
-        run<4, Kernel>(dc,
-                       rhoc,
-                       dm,
-                       seed_dc,
-                       pPBin,
-                       std::move(wrapped),
-                       std::make_tuple(pData, pResults),
-                       n_points,
-                       kernel,
-                       queue,
-                       block_size);
-        return;
-      [[unlikely]] case (5):
-        run<5, Kernel>(dc,
-                       rhoc,
-                       dm,
-                       seed_dc,
-                       pPBin,
-                       std::move(wrapped),
-                       std::make_tuple(pData, pResults),
-                       n_points,
-                       kernel,
-                       queue,
-                       block_size);
-        return;
-      [[unlikely]] case (6):
-        run<6, Kernel>(dc,
-                       rhoc,
-                       dm,
-                       seed_dc,
-                       pPBin,
-                       std::move(wrapped),
-                       std::make_tuple(pData, pResults),
-                       n_points,
-                       kernel,
-                       queue,
-                       block_size);
-        return;
-      [[unlikely]] case (7):
-        run<7, Kernel>(dc,
-                       rhoc,
-                       dm,
-                       seed_dc,
-                       pPBin,
-                       std::move(wrapped),
-                       std::make_tuple(pData, pResults),
-                       n_points,
-                       kernel,
-                       queue,
-                       block_size);
-        return;
-      [[unlikely]] case (8):
-        run<8, Kernel>(dc,
-                       rhoc,
-                       dm,
-                       seed_dc,
-                       pPBin,
-                       std::move(wrapped),
-                       std::make_tuple(pData, pResults),
-                       n_points,
-                       kernel,
-                       queue,
-                       block_size);
-        return;
-      [[unlikely]] case (9):
-        run<9, Kernel>(dc,
-                       rhoc,
-                       dm,
-                       seed_dc,
-                       pPBin,
-                       std::move(wrapped),
-                       std::make_tuple(pData, pResults),
-                       n_points,
-                       kernel,
-                       queue,
-                       block_size);
-        return;
-      [[unlikely]] case (10):
-        run<10, Kernel>(dc,
-                        rhoc,
-                        dm,
-                        seed_dc,
-                        pPBin,
-                        std::move(wrapped),
-                        std::make_tuple(pData, pResults),
-                        n_points,
-                        kernel,
-                        queue,
-                        block_size);
-        return;
-      [[unlikely]] default:
-        std::cout << "This library only works up to 10 dimensions\n";
+      [[unlikely]] case (1)
+          : run<1, Kernel>(dc,
+                           rhoc,
+                           dm,
+                           seed_dc,
+                           pPBin,
+                           std::move(wrapped),
+                           std::make_tuple(pData, pResults),
+                           n_points,
+                           kernel,
+                           queue,
+                           block_size);
+      return;
+      [[likely]] case (2)
+          : run<2, Kernel>(dc,
+                           rhoc,
+                           dm,
+                           seed_dc,
+                           pPBin,
+                           std::move(wrapped),
+                           std::make_tuple(pData, pResults),
+                           n_points,
+                           kernel,
+                           queue,
+                           block_size);
+      return;
+      [[likely]] case (3)
+          : run<3, Kernel>(dc,
+                           rhoc,
+                           dm,
+                           seed_dc,
+                           pPBin,
+                           std::move(wrapped),
+                           std::make_tuple(pData, pResults),
+                           n_points,
+                           kernel,
+                           queue,
+                           block_size);
+      return;
+      [[unlikely]] case (4)
+          : run<4, Kernel>(dc,
+                           rhoc,
+                           dm,
+                           seed_dc,
+                           pPBin,
+                           std::move(wrapped),
+                           std::make_tuple(pData, pResults),
+                           n_points,
+                           kernel,
+                           queue,
+                           block_size);
+      return;
+      [[unlikely]] case (5)
+          : run<5, Kernel>(dc,
+                           rhoc,
+                           dm,
+                           seed_dc,
+                           pPBin,
+                           std::move(wrapped),
+                           std::make_tuple(pData, pResults),
+                           n_points,
+                           kernel,
+                           queue,
+                           block_size);
+      return;
+      [[unlikely]] case (6)
+          : run<6, Kernel>(dc,
+                           rhoc,
+                           dm,
+                           seed_dc,
+                           pPBin,
+                           std::move(wrapped),
+                           std::make_tuple(pData, pResults),
+                           n_points,
+                           kernel,
+                           queue,
+                           block_size);
+      return;
+      [[unlikely]] case (7)
+          : run<7, Kernel>(dc,
+                           rhoc,
+                           dm,
+                           seed_dc,
+                           pPBin,
+                           std::move(wrapped),
+                           std::make_tuple(pData, pResults),
+                           n_points,
+                           kernel,
+                           queue,
+                           block_size);
+      return;
+      [[unlikely]] case (8)
+          : run<8, Kernel>(dc,
+                           rhoc,
+                           dm,
+                           seed_dc,
+                           pPBin,
+                           std::move(wrapped),
+                           std::make_tuple(pData, pResults),
+                           n_points,
+                           kernel,
+                           queue,
+                           block_size);
+      return;
+      [[unlikely]] case (9)
+          : run<9, Kernel>(dc,
+                           rhoc,
+                           dm,
+                           seed_dc,
+                           pPBin,
+                           std::move(wrapped),
+                           std::make_tuple(pData, pResults),
+                           n_points,
+                           kernel,
+                           queue,
+                           block_size);
+      return;
+      [[unlikely]] case (10)
+          : run<10, Kernel>(dc,
+                            rhoc,
+                            dm,
+                            seed_dc,
+                            pPBin,
+                            std::move(wrapped),
+                            std::make_tuple(pData, pResults),
+                            n_points,
+                            kernel,
+                            queue,
+                            block_size);
+      return;
+      [[unlikely]] default : std::cout << "This library only works up to 10 dimensions\n";
     }
   }
 

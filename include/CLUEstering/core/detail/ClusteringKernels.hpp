@@ -35,11 +35,7 @@ namespace clue::detail {
       auto binId = tiles.getGlobalBinByBin(base_vec);
       auto span = tiles[binId];  //now returns a mdSpan
 
-      auto binSize = tiles[binId].size();
-
-      for (auto el : span) {
-        int32_t j = el;
-
+      for (auto j : span) {
         auto coords_j = dev_points[j];
         auto distance = metric(coords_i, coords_j);
 

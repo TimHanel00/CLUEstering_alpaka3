@@ -21,7 +21,7 @@ namespace clue {
 
           // Debug hardening (keep behind #ifdef if you want)
           if (bin < -1 || bin >= nbins) {
-            printf("BAD BIN i=%d bin=%d nbins=%d\n", (int)i, bin, nbins);
+            printf("BAD BIN i=%d bin=%d nbins=%d\n", static_cast<int>(i), bin, nbins);
             bin = -1;  // or __builtin_trap();
           }
 

@@ -20,7 +20,7 @@ path = dirname(__file__)
 sys.path.insert(1, join(path, 'lib'))
 import CLUE_Convolutional_Kernels as clue_kernels
 import CLUE_CPU_Serial as cpu_serial
-
+import argparse
 backends = ["cpu serial"]
 tbb_found = exists(str(*glob(join(path, 'lib/CLUE_CPU_TBB*.so'))))
 if tbb_found:
@@ -38,7 +38,29 @@ hip_found = exists(str(*glob(join(path, 'lib/CLUE_GPU_HIP*.so'))))
 if hip_found:
     import CLUE_GPU_HIP as gpu_hip
     backends.append("gpu hip")
+def clue_args() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Run CLUE clustering on an input dataset.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
+    parser.add_argument("--input", default="../data/blob.csv", help="Input CSV file")
+    parser.add_argument(
+        "--backend",
+        default="cpu serial",
+        choices=["cpu serial", "cpu tbb", "cpu openmp", "gpu cuda", "gpu hip", "all"],
+        help="Backend to use (must be available in your build)",
+    )
+    parser.add_argument("--dimension", type=list, default = None, help="The dimension that will be used for the clustering algorithm.")
+    parser.add_argument("--device-id", type=int, default = 0, help="Device id for the selected backend")
+    parser.add_argument("--block-size", type=int, default = 1024, help="Block size (used by some backends)")
+    parser.add_argument("--verbose", action="store_true", help="Print timing / cluster count")
+
+    parser.add_argument("--dc", type=float, default = 1.0, help="dc parameter")
+    parser.add_argument("--rhoc", type=float, default = 5.0, help="rhoc parameter")
+    parser.add_argument("--dm", type=float, default = 2.0, help="dm parameter")
+
+    return parser.parse_args()
 
 def is_tbb_available():
     """
@@ -230,7 +252,11 @@ class clusterer:
     :type elapsed_time: float
     """
 
-    def __init__(self, dc: float, rhoc: float, dm: [float, None] = None, seed_dc: [float, None] = None, ppbin: int = 128):
+    def __init__(self, dc: [float, None] = None, rhoc: [float, None] = None, dm: [float, None] = None, seed_dc: [float, None] = None, ppbin: int = 128, args=None):
+        if args is not None:
+            dc = args.dc
+            rhoc = args.rhoc
+            dm = args.dm
         self._dc = dc
         self._rhoc = rhoc
         self._dm = dm
@@ -254,7 +280,6 @@ class clusterer:
         ## Output attributes
         self.clust_prop = None
         self._elapsed_time = 0.
-
     def set_params(self, dc: float, rhoc: float,
                    dm: [float, None] = None, seed_dc: [float, None] = None, ppbin: int = 128) -> None:
         """
@@ -656,6 +681,14 @@ class clusterer:
         if verbose:
             print(f'CLUE executed in {self._elapsed_time} ms')
             print(f'Number of clusters found: {self.clust_prop.n_clusters}')
+    def run_clue_from_args(self,args):
+        return self.run_clue(
+            backend=args.backend,
+            block_size=args.block_size,
+            device_id=args.device_id,
+            verbose=args.verbose,
+            dimensions=args.dimension,
+        )
 
     def fit(self,
             data: Union[pd.DataFrame,str,dict,list,np.ndarray],

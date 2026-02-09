@@ -123,8 +123,8 @@ namespace clue {
 
   template <std::size_t Ndim>
   inline PointsHost<Ndim>::PointsHost(int32_t n_points)
-      : m_buffer{make_host_buffer<std::byte>(soa::host::computeSoASize<Ndim>(n_points))},
-        m_view{},
+      : m_view{},
+        m_buffer{make_host_buffer<std::byte>(soa::host::computeSoASize<Ndim>(n_points))},
         m_size{n_points} {
     soa::host::partitionSoAView<Ndim>(m_view, m_buffer->data(), n_points);
   }

@@ -7,7 +7,7 @@
 #include "CLUEstering/internal/algorithm/reduce/reduce.hpp"
 #include "CLUEstering/internal/alpaka/memory.hpp"
 #include "CLUEstering/internal/meta/apply.hpp"
-#include "CLUEstering/internal/alpaka/func.hpp"
+#include "CLUEstering/internal/alpaka/minMax.hpp"
 #include <alpaka/alpaka.hpp>
 #include <cassert>
 #include <cstdint>
@@ -152,8 +152,8 @@ namespace clue {
   inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device, int32_t n_points)
       : m_buffer{make_device_buffer<std::byte>(device,
                                                soa::device::computeSoASize<Ndim>(n_points))},
-        m_view{},
         m_device(device),
+        m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points);
   }
@@ -163,8 +163,8 @@ namespace clue {
                                                 int32_t n_points,
                                                 std::span<std::byte> buffer)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
-        m_view{},
         m_device(device),
+        m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), buffer.data(), n_points);
   }
@@ -175,8 +175,8 @@ namespace clue {
                                                 std::span<float> input,
                                                 std::span<int> output)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
-        m_view{},
         m_device(device),
+        m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, input, output);
   }
@@ -188,8 +188,8 @@ namespace clue {
                                                 std::span<float> weights,
                                                 std::span<int> output)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
-        m_view{},
         m_device(device),
+        m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(
         m_view, m_buffer.data(), n_points, coordinates, weights, output);
@@ -201,8 +201,8 @@ namespace clue {
                                                 float* input,
                                                 int* output)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
-        m_view{},
         m_device(device),
+        m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, input, output);
   }
@@ -211,8 +211,8 @@ namespace clue {
   inline PointsDevice<Ndim, TDev>::PointsDevice(
       TDev& device, int32_t n_points, float* coordinates, float* weights, int* output)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
-        m_view{},
         m_device(device),
+        m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(
         m_view, m_buffer.data(), n_points, coordinates, weights, output);
@@ -225,8 +225,8 @@ namespace clue {
                                                                    int32_t n_points,
                                                                    TBuffers... buffers)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
-        m_view{},
         m_device(device),
+        m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, buffers...);
   }

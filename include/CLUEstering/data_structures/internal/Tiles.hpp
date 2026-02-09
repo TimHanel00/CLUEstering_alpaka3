@@ -21,11 +21,11 @@ namespace clue::internal {
   public:
     template <::clue::concepts::Queue TQueue>
     Tiles(TQueue& queue, int32_t n_points, int32_t n_tiles)
-        : m_assoc{static_cast<std::size_t>(n_points), static_cast<std::size_t>(n_tiles), queue},
-          m_minmax{make_device_buffer<CoordinateExtremes<Ndim>>(queue.getDevice(),
+        : m_minmax{make_device_buffer<CoordinateExtremes<Ndim>>(queue.getDevice(),
                                                                 alpaka::Vec<std::size_t, 1U>{1})},
           m_tilesizes{make_device_buffer<float>(queue.getDevice(), Ndim)},
           m_wrapped{make_device_buffer<uint8_t>(queue.getDevice(), Ndim)},
+          m_assoc{static_cast<std::size_t>(n_points), static_cast<std::size_t>(n_tiles), queue},
           m_ntiles{n_tiles},
           m_nperdim{static_cast<int32_t>(std::pow(n_tiles, 1.f / Ndim))},
           m_view{} {

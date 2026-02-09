@@ -9,18 +9,15 @@ if(NOT alpaka_FOUND)
   include(FetchContent)
   FetchContent_Declare(
           alpaka
-          GIT_REPOSITORY https://github.com/TimHanel00/alpaka3.git
-          GIT_TAG c59fa3e4b60ffdf9a8ca7abe3ef651187d3a3a2a
+          GIT_REPOSITORY https://github.com/alpaka-group/alpaka3.git
+          GIT_TAG 2d731a38e21aa544c8011306e581f844754187aa
   )
   FetchContent_MakeAvailable(alpaka)
 
 endif()
-option(BUILD_PYTHON "Build the Python bindings" OFF)
 
-if(BUILD_PYTHON)
-  add_subdirectory(extern/pybind11)
-  add_subdirectory(CLUEstering/BindingModules)
-endif()
+
+
 if(NOT TARGET CLUEstering::CLUEstering)
   # generate version header
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in
@@ -87,11 +84,24 @@ if(NOT TARGET CLUEstering::CLUEstering)
               "${CMAKE_CURRENT_BINARY_DIR}/CLUEsteringConfigVersion.cmake"
         DESTINATION lib/cmake/CLUEstering)
 endif ()
+option(BUILD_PYTHON "Build the Python bindings" OFF)
+if(BUILD_PYTHON)
+  if(NOT EXISTS "${CMAKE_SOURCE_DIR}/extern/pybind11/CMakeLists.txt")
+    message(FATAL_ERROR
+            "pybind11 submodule is missing.\n"
+            "Run:\n"
+            "  git submodule update --init --recursive\n"
+            "or configure with -DBUILD_PYTHON=OFF.")
+  endif()
+  add_subdirectory(extern/pybind11)
+  add_subdirectory(CLUEstering/BindingModules)
+endif()
 option(CLUE_Examples "Build CLUE examples" OFF)
 
 if(CLUE_Examples)
 
   set(CLUEstering_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+  option(CLUE_Examples_GENERATE_MULTIPLE "Generates a target for each selected backend (using alpaka cmake DEP flags) - OFF: generates one target for the first valid backend/executor combination (using alpaka cmake flags)" ON)
   add_subdirectory(examples)
 endif()
 option(CLUE_Testing "Build CLUE tests" OFF)
