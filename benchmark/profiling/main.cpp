@@ -10,9 +10,9 @@
 void run(const std::string& input_file) {
   const auto device = clue::get_device(0u);
   clue::Queue queue(device);
-
-  auto h_points = clue::read_csv<2>(queue, input_file);
-  clue::PointsDevice<2> d_points(queue, h_points.size());
+  auto device=queue.getDevice();
+  auto h_points = clue::read_csv<2>(input_file);
+  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, h_points.size());
 
   const float dc{1.5f}, rhoc{10.f}, outlier{1.5f};
   clue::Clusterer<2> algo(queue, dc, rhoc, outlier);

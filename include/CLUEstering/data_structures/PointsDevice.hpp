@@ -114,11 +114,12 @@ namespace clue {
   template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
   class PointsDevice : public internal::points_interface<PointsDevice<Ndim, TDev>> {
     getBufferType<TDev, std::byte> m_buffer;
+    TDev m_device;
     PointsView<Ndim> m_view;
     std::optional<std::size_t> m_nclusters;
     int32_t m_size;
     bool m_clustered = false;
-    TDev m_device;
+
 
   public:
     /// @brief Construct a PointsDevice object

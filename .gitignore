@@ -1,11 +1,10 @@
 # Pycache folders
 *__pycache__
-cmake_build_debug/
+cmake-build-debug/
 # Folders generate during the build
 *CLUEstering.egg-info
 dist/
 build/
-
 # Shared library files
 *.so
 

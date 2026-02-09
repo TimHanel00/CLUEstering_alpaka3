@@ -51,10 +51,12 @@ namespace clue::detail {
                              d_min,
                              internal::simdMin(),
                              devCoordsView);
+
       float h_max{};
       float h_min{};
       alpaka::onHost::memcpy(queue, makeView(alpaka::api::host,&h_max,Vec1D{1U}), d_max);
       alpaka::onHost::memcpy(queue, makeView(alpaka::api::host,&h_min,Vec1D{1U}), d_min);
+      alpaka::onHost::wait(queue);
       min_max->min(dim) = h_min;
       min_max->max(dim) = h_max;
 

@@ -2,14 +2,13 @@ pybind11_add_module(CLUE_CPU_TBB SHARED binding_cpu_tbb.cpp)
 target_include_directories(CLUE_CPU_TBB
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 target_compile_definitions(
-  CLUE_CPU_TBB PRIVATE ALPAKA_HOST_ONLY ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLED
-                       CLUE_ENABLE_CACHING_ALLOCATOR)
-target_link_libraries(CLUE_CPU_TBB PRIVATE alpaka::alpaka Boost::atomic
-                                           TBB::tbb)
+  CLUE_CPU_TBB PRIVATE alpaka_SELECT_TBB)
+target_link_libraries(CLUE_CPU_TBB PRIVATE CLUEstering::CLUEstering)
 set_target_properties(
   CLUE_CPU_TBB
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY
              ${CMAKE_CURRENT_BINARY_DIR}/../../../lib/CLUEstering/lib/)
+clue_finalize(CLUE_CPU_TBB)
 # copy shared library for local testing
 add_custom_command(
   TARGET CLUE_CPU_TBB

@@ -246,6 +246,7 @@ namespace clue {
                     temp_offsets.data(),
                     nbins,
                     size);
+      alpaka::onHost::wait(queue);
     }
   };
 }  // namespace clue

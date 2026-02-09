@@ -432,9 +432,8 @@ TEST_CASE("Test coordinate getter throwing conditions") {
 
 TEST_CASE("Test cluster properties accessors") {
   auto queue = clue::get_queue(0u);
-
-  clue::PointsHost<2> h_points = clue::read_csv<2>("../../../data/data_32768.csv");
-
+  const auto test_file_path = std::string(TEST_DATA_DIR) + "/data_32768.csv";
+  clue::PointsHost<2> h_points = clue::read_csv<2>(test_file_path);
   const float dc{1.3f}, rhoc{10.f}, outlier{1.3f};
   clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
   algo.make_clusters(queue, h_points);

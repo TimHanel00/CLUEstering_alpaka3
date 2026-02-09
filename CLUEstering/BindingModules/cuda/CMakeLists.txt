@@ -11,15 +11,15 @@ set_source_files_properties(binding_gpu_cuda.cpp PROPERTIES LANGUAGE CUDA)
 pybind11_add_module(CLUE_GPU_CUDA SHARED binding_gpu_cuda.cpp)
 target_include_directories(CLUE_GPU_CUDA
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
-target_link_libraries(CLUE_GPU_CUDA PRIVATE alpaka::alpaka Boost::atomic)
-target_compile_definitions(CLUE_GPU_CUDA PRIVATE ALPAKA_ACC_GPU_CUDA_ENABLED
-                                                 CLUE_ENABLE_CACHING_ALLOCATOR)
+target_link_libraries(CLUE_GPU_CUDA PRIVATE CLUEstering::CLUEstering)
+target_compile_definitions(CLUE_GPU_CUDA PRIVATE alpaka_SELECT_CUDA)
 target_compile_options(CLUE_GPU_CUDA PRIVATE --expt-relaxed-constexpr)
 set_target_properties(
   CLUE_GPU_CUDA
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY
              ${CMAKE_CURRENT_BINARY_DIR}/../../../lib/CLUEstering/lib/
              CUDA_ARCHITECTURES native)
+clue_finalize(CLUE_GPU_CUDA)
 # copy shared library for local testing
 add_custom_command(
   TARGET CLUE_GPU_CUDA

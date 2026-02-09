@@ -4,7 +4,7 @@
 #include "CLUEstering/CLUEstering.hpp"
 #include <vector>
 
-template <uint8_t Ndim, clue::concepts::convolutional_kernel Kernel>
+template <uint8_t Ndim, typename Kernel>
 void run(float dc,
          float rhoc,
          float dm,
@@ -14,14 +14,14 @@ void run(float dc,
          std::tuple<float*, int*>&& pData,
          int32_t n_points,
          const Kernel& kernel,
-         clue::Queue queue,
+         clue::concepts::Queue auto queue,
          size_t block_size) {
-  clue::Clusterer<Ndim> algo(queue, dc, rhoc, dm, seed_dc, pPBin);
+  auto device=queue.getDevice();
+  clue::Clusterer<ALPAKA_TYPEOF(queue),Ndim> algo(queue, dc, rhoc, dm, seed_dc, pPBin);
   algo.setWrappedCoordinates(std::move(wrapped));
-
   // Create the host and device points
-  clue::PointsHost<Ndim> h_points(queue, n_points, std::get<0>(pData), std::get<1>(pData));
-  clue::PointsDevice<Ndim> d_points(queue, n_points);
+  clue::PointsHost<Ndim> h_points(n_points, std::get<0>(pData), std::get<1>(pData));
+  clue::PointsDevice<Ndim,ALPAKA_TYPEOF(device)> d_points(device, n_points);
 
   algo.make_clusters(queue, h_points, d_points, clue::EuclideanMetric<Ndim>{}, kernel, block_size);
 }

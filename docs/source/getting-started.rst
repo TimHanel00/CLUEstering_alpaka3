@@ -15,10 +15,10 @@ Below is a simple C++ code snippet, which can also be found, along with the CMak
     int main() {
         // Obtain the queue, which is used for allocations and kernel launches.
         auto queue = clue::get_queue(0u);
-    
+        auto device = queue.getDevice();
         // Allocate the points on the host and device.
-        clue::PointsHost<2> h_points = clue::read_csv<2>(queue, "path-to-data.csv");
-        clue::PointsDevice<2> d_points(queue, h_points.size());
+        clue::PointsHost<2> h_points = clue::read_csv<2>("path-to-data.csv");
+        clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, h_points.size());
     
         // Define the parameters for the clustering and construct the clusterer.
         const float dc = 20.f, rhoc = 10.f, outlier = 20.f;

@@ -25,14 +25,6 @@ string(
 set(PYBIND11_FINDPYTHON ON)
 set(PYBIND11_PYTHON_VERSION ">=3.8")
 
-find_package(Boost 1.74.0 REQUIRED COMPONENTS atomic)
-
-include(FetchContent)
-FetchContent_Declare(
-  alpaka
-  URL https://github.com/alpaka-group/alpaka/archive/refs/tags/1.2.0.tar.gz)
-FetchContent_MakeAvailable(alpaka)
-
 # create lib directory in CLUEstering folder
 file(MAKE_DIRECTORY ../lib)
 
@@ -41,15 +33,14 @@ pybind11_add_module(CLUE_Convolutional_Kernels SHARED
                     ${CMAKE_CURRENT_SOURCE_DIR}/binding_kernels.cpp)
 target_include_directories(CLUE_Convolutional_Kernels
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
-target_link_libraries(CLUE_Convolutional_Kernels PRIVATE alpaka::alpaka
-                                                         Boost::atomic)
+target_link_libraries(CLUE_Convolutional_Kernels PRIVATE CLUEstering::CLUEstering)
 target_compile_definitions(
-  CLUE_Convolutional_Kernels PRIVATE ALPAKA_HOST_ONLY
-                                     ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED)
+  CLUE_Convolutional_Kernels PRIVATE alpaka_SELECT_CpuSerial)
 set_target_properties(
   CLUE_Convolutional_Kernels
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY
              ${CMAKE_CURRENT_BINARY_DIR}/../../lib/CLUEstering/lib/)
+clue_finalize(CLUE_Convolutional_Kernels)
 # copy shared library for local testing
 add_custom_command(
   TARGET CLUE_Convolutional_Kernels
@@ -58,27 +49,20 @@ add_custom_command(
     ${CMAKE_COMMAND} -E copy
     ${CMAKE_CURRENT_BINARY_DIR}/../../lib/CLUEstering/lib/CLUE_Convolutional_Kernels.*
     ${CMAKE_CURRENT_SOURCE_DIR}/../lib/)
-
-add_subdirectory(serial)
-
-find_package(TBB)
-if(TBB_FOUND)
+if(alpaka_EXEC_CpuSerial)
+  add_subdirectory(serial)
+endif()
+if(alpaka_DEP_TBB)
   add_subdirectory(tbb)
 endif()
-
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
+if(alpaka_DEP_OMP)
   add_subdirectory(openmp)
 endif()
-
-include(CheckLanguage)
-check_language(CUDA)
-if(CMAKE_CUDA_COMPILER)
+if(alpaka_DEP_CUDA)
   add_subdirectory(cuda)
 endif()
 
 # GPU HIP
-check_language(HIP)
-if(CMAKE_HIP_COMPILER)
+if(alpaka_DEP_HIP)
   add_subdirectory(hip)
 endif()

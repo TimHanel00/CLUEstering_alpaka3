@@ -1,9 +1,11 @@
 
 #pragma once
+
 #include "CLUEstering/detail/concepts.hpp"
-#include "CLUEstering/internal/alpaka/func.hpp"
+#include "CLUEstering/internal/alpaka/minMax.hpp"
 #include <limits>
 #include <span>
+#include <stdexcept>
 namespace clue::internal {
 
   auto foo(auto j) {
@@ -13,6 +15,8 @@ namespace clue::internal {
   inline auto make_associator(TQueue& queue,
                               std::span<const T_Elem> associations,
                               T_Elem elements) {
+    if (elements == 0 || associations.empty())
+      throw std::invalid_argument("make_associator: elements and associations must be non-zero");
     auto device=queue.getDevice();
     alpaka::onHost::SharedBuffer compute_buffer_out =
         alpaka::onHost::alloc<T_Elem>(device,alpaka::Vec{1U});
