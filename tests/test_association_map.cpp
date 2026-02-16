@@ -9,13 +9,12 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 TEST_CASE("Test binary association map") {
-  auto queue=clue::DevicePool::getHost().makeQueue(alpaka::queueKind::blocking);
   const int32_t size = 1000;
   auto associations = clue::make_host_buffer<int32_t>(size);
   std::ranges::transform(
       std::views::iota(0, size), associations.data(), [](auto x) -> int32_t { return x % 2 == 0; });
   auto map =
-      clue::internal::make_associator(queue, std::span<const int32_t>(associations.data(), size), size);
+      clue::internal::make_associator(std::span<const int32_t>(associations.data(), size), size);
 
   SUBCASE("Check size") { CHECK(map.size() == 2); }
   SUBCASE("Check extents") {

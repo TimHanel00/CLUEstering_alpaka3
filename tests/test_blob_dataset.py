@@ -7,11 +7,13 @@ import os
 import sys
 import pandas as pd
 import pytest
+
+from CLUEstering.CLUEstering import all_backends
 from check_result import check_result
 from sklearn.metrics import silhouette_score
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
-
+from CLUEstering import all_backends
 
 @pytest.fixture
 def blobs():
@@ -21,7 +23,7 @@ def blobs():
     return pd.read_csv("../data/blob.csv")
 
 
-def test_clustering(blobs):
+def test_clustering(blobs, backend):
     '''
     Checks that the output of the clustering is the one given by the
     truth dataset
@@ -34,7 +36,7 @@ def test_clustering(blobs):
     c = clue.clusterer(1., 5, 2.)
     c.read_data(blobs)
     assert c.n_dim == 3
-    c.run_clue()
+    c.run_clue(backend=backend)
     c.to_csv('./', 'blobs_output.csv')
 
     assert silhouette_score(c.coords.T, c.cluster_ids) > 0.8
@@ -43,5 +45,5 @@ def test_clustering(blobs):
 if __name__ == "__main__":
     c = clue.clusterer(1., 5, 2.)
     c.read_data("../data/blob.csv")
-    c.run_clue()
+    c.run_clue(backend=all_backends()[0])
     c.cluster_plotter()

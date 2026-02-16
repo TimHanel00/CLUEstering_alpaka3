@@ -10,7 +10,7 @@ import pytest
 from sklearn.metrics import silhouette_score
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
-
+from CLUEstering import all_backends
 
 @pytest.fixture
 def toy_det_1000():
@@ -92,9 +92,8 @@ def test_toy_det_1000(toy_det_1000):
 #     assert check_result('./toy_det_10000_output.csv',
 #                         '../data/truth_files/toy_det_10000_truth.csv')
 
-
 if __name__ == "__main__":
     c = clue.clusterer(4., 2.5, 4.)
     c.read_data("../data/toyDetector_1000.csv")
-    c.run_clue()
+    c.run_clue(backend=all_backends()[0])
     c.cluster_plotter()

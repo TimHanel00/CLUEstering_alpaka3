@@ -7,9 +7,11 @@ import sys
 import numpy as np
 import pandas as pd
 import pytest
-from check_result import check_result
+
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
+from CLUEstering import backends
+from check_result import check_result
 
 @pytest.fixture
 def dataset():
@@ -50,36 +52,36 @@ def test_set_params():
     assert c._dm == 2.
     assert c._seed_dc == 3
 
-def test_clustering_methods(dataset):
+def test_clustering_methods(dataset,backend):
     '''
     Test the different clustering methods
     '''
 
     c = clue.clusterer(21., 10., 21.)
     c.read_data(dataset)
-    c.run_clue()
+    c.run_clue(backend=backend)
 
     d = clue.clusterer(21., 10., 21.)
-    d.fit(dataset)
+    d.fit(dataset,backend=backend)
 
     e = clue.clusterer(21., 10., 21.)
-    cluster_ids = e.fit_predict(dataset)
+    cluster_ids = e.fit_predict(dataset,backend=backend)
 
     assert (c.cluster_ids == d.cluster_ids).all()
     assert (c.cluster_ids == cluster_ids).all()
     assert c.n_clusters == d.n_clusters
     assert c.n_clusters == e.n_clusters
 
-def test_verbose_clustering(dataset):
+def test_verbose_clustering(dataset, backend):
     '''
     Test the verbose clustering
     '''
 
     c = clue.clusterer(21., 10., 21.)
     c.read_data(dataset)
-    c.run_clue(verbose=True)
+    c.run_clue(verbose=True,backend=backend)
 
-def test_clusterer_properties(dataset):
+def test_clusterer_properties(dataset, backend):
     '''
     Test the properties of the clusterer class
     '''
@@ -98,7 +100,7 @@ def test_clusterer_properties(dataset):
     npoints = c.n_points
     assert npoints == 999
 
-    c.run_clue()
+    c.run_clue(backend=backend)
 
     nclusters = c.n_clusters
     assert nclusters > 0

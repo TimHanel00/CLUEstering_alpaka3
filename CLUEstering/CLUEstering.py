@@ -19,9 +19,12 @@ from os.path import dirname, exists, join
 path = dirname(__file__)
 sys.path.insert(1, join(path, 'lib'))
 import CLUE_Convolutional_Kernels as clue_kernels
-import CLUE_CPU_Serial as cpu_serial
 import argparse
-backends = ["cpu serial"]
+backends = []
+cpu_serial_found = exists(str(*glob(join(path, 'lib/CLUE_CPU_Serial*.so'))))
+if cpu_serial_found:
+    import CLUE_CPU_Serial as cpu_serial
+    backends.append("cpu serial")
 tbb_found = exists(str(*glob(join(path, 'lib/CLUE_CPU_TBB*.so'))))
 if tbb_found:
     import CLUE_CPU_TBB as cpu_tbb
@@ -38,6 +41,9 @@ hip_found = exists(str(*glob(join(path, 'lib/CLUE_GPU_HIP*.so'))))
 if hip_found:
     import CLUE_GPU_HIP as gpu_hip
     backends.append("gpu hip")
+
+def all_backends():
+    return backends
 def clue_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run CLUE clustering on an input dataset.",

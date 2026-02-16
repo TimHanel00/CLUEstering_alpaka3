@@ -74,8 +74,9 @@ namespace clue {
 
     ALPAKA_FN_HOST_ACC auto operator[](int i) const {
       if (i == -1) {
-        std::array<float, Ndim + 1> a;
-        std::ranges::fill(a, std::numeric_limits<float>::max());
+        std::array<float, Ndim + 1> a{std::numeric_limits<float>::max()};
+
+        a.fill(std::numeric_limits<float>::max());
         return a;
       }
       std::array<float, Ndim + 1> point;

@@ -9,7 +9,7 @@ import pytest
 from check_result import check_result
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
-
+from CLUEstering import all_backends
 @pytest.fixture
 def sissa():
     '''
@@ -17,7 +17,7 @@ def sissa():
     '''
     return pd.read_csv("../data/sissa_1000.csv")
 
-def test_clusterer_import(sissa):
+def test_clusterer_import(sissa,backend):
     '''
     Try importing a clusterer from csv file and check that it's equal to the original clusterer
     '''
@@ -27,7 +27,7 @@ def test_clusterer_import(sissa):
 
     c = clue.clusterer(20., 10., 20.)
     c.read_data(sissa)
-    c.run_clue()
+    c.run_clue(backend=backend)
     c.to_csv('./', 'test_sissa_import.csv')
 
     d = clue.clusterer(20., 10., 20.)
@@ -38,7 +38,7 @@ def test_clusterer_import(sissa):
 if __name__ == "__main__":
     c = clue.clusterer(20., 10., 20.)
     c.read_data("../data/sissa_1000.csv")
-    c.run_clue()
+    c.run_clue(all_backends()[0])
     c.cluster_plotter()
     c.to_csv('./', 'test_sissa_import.csv')
 

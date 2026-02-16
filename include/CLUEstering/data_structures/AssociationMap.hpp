@@ -194,6 +194,7 @@ namespace clue {
     ALPAKA_FN_HOST void fill(TQueue& queue,
                              size_type size,
                              std::span<const key_type> associations) {
+
       auto exec = DevicePool::exec();
       if (Base::m_extents.keys == 0)
         return;

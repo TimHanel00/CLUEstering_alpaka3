@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
-
+from CLUEstering import all_backends
 
 @pytest.fixture
 def moons():
@@ -19,7 +19,7 @@ def moons():
     return pd.read_csv("../data/moons.csv")
 
 
-def test_clustering(moons):
+def test_clustering(moons,backend):
     '''
     Checks that the output of the clustering is the one given by the truth
     dataset.
@@ -32,7 +32,7 @@ def test_clustering(moons):
     c = clue.clusterer(78., 80., 90., 100.)
     c.read_data(moons)
     assert c.n_dim == 2
-    c.run_clue()
+    c.run_clue(backend=backend)
     c.to_csv('./', 'moons_output.csv')
 
     assert True
@@ -41,6 +41,6 @@ def test_clustering(moons):
 if __name__ == "__main__":
     c = clue.clusterer(78., 80, 90., 100)
     c.read_data("../data/moons.csv")
-    c.run_clue()
+    c.run_clue(backend=all_backends()[0])
     c.cluster_plotter()
     c.to_csv('../data/truth_files/', 'moons_1000_truth.csv')

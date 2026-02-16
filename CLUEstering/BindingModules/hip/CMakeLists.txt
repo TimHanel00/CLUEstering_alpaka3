@@ -6,18 +6,21 @@ find_package(hip)
 set(hip_BASE "${hip_INCLUDE_DIRS}/..")
 set(CMAKE_CXX_COMPILER "${hip_BASE}/bin/hipcc")
 pybind11_add_module(CLUE_GPU_HIP SHARED binding_gpu_hip.cpp)
+target_link_libraries(CLUE_GPU_HIP PUBLIC CLUEstering::CLUEstering)
 target_include_directories(CLUE_GPU_HIP
-                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
-target_link_libraries(CLUE_GPU_HIP PRIVATE CLUEstering::CLUEstering)
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
 target_compile_definitions(CLUE_GPU_HIP PRIVATE alpaka_SELECT_HIP)
 target_include_directories(CLUE_GPU_HIP PRIVATE ${hip_INCLUDE_DIRS})
 target_include_directories(CLUE_GPU_HIP PRIVATE ${hip_BASE}/hiprand/include)
 target_include_directories(CLUE_GPU_HIP PRIVATE ${hip_BASE}/rocrand/include)
-set_target_properties(
-  CLUE_GPU_HIP
-  PROPERTIES LIBRARY_OUTPUT_DIRECTORY
-             ${CMAKE_CURRENT_BINARY_DIR}/../../../lib/CLUEstering/lib/)
-clue_finalize(CLUE_GPU_HIP)
+set_target_properties(CLUE_GPU_HIP
+        PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY
+        ${PROJECT_SOURCE_DIR}/CLUEstering/lib
+)
+alpaka_finalize(CLUE_GPU_HIP)
 # create link of shared object to lib folder inside CLUEstering directory
 add_custom_command(
   TARGET CLUE_GPU_HIP

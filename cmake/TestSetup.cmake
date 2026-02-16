@@ -41,44 +41,44 @@ execute_process(
         OUTPUT_VARIABLE GPU_LIST
         ERROR_QUIET
         RESULT_VARIABLE SMI_STATUS)
-
-if(SMI_STATUS EQUAL 0 AND NOT GPU_LIST STREQUAL "")
-    set(NVIDIA_GPU_PRESENT TRUE)
-else()
-    set(NVIDIA_GPU_PRESENT FALSE)
-endif()
-
-check_language(CUDA)
-if(CMAKE_CUDA_COMPILER AND NVIDIA_GPU_PRESENT)
-    add_subdirectory(cuda)
-endif()
-
-execute_process(
-        COMMAND rocm-smi --showproductname
-        OUTPUT_VARIABLE AMD_GPU_LIST
-        ERROR_QUIET
-        RESULT_VARIABLE SMI_STATUS)
-
-if(SMI_STATUS EQUAL 0 AND NOT AMD_GPU_LIST STREQUAL "")
-    set(AMD_GPU_PRESENT TRUE)
-else()
-    set(AMD_GPU_PRESENT FALSE)
-endif()
-
-set(_sycl_search_dirs ${SYCL_ROOT_DIR} /usr/lib /usr/local/lib
-        /opt/intel/oneapi/compiler/latest/linux)
-find_program(
-        SYCL_COMPILER
-        NAMES icpx
-        HINTS ${_sycl_search_dirs}
-        PATH_SUFFIXES bin)
-find_path(
-        SYCL_INCLUDE_DIR
-        NAMES sycl/sycl.hpp
-        HINTS ${_sycl_search_dirs}
-        PATH_SUFFIXES include)
-find_path(
-        SYCL_LIB_DIR
-        NAMES libsycl.so
-        HINTS ${_sycl_search_dirs}
-        PATH_SUFFIXES lib)
+#
+#if(SMI_STATUS EQUAL 0 AND NOT GPU_LIST STREQUAL "")
+#    set(NVIDIA_GPU_PRESENT TRUE)
+#else()
+#    set(NVIDIA_GPU_PRESENT FALSE)
+#endif()
+#
+#check_language(CUDA)
+#if(CMAKE_CUDA_COMPILER AND NVIDIA_GPU_PRESENT)
+#    add_subdirectory(cuda)
+#endif()
+#
+#execute_process(
+#        COMMAND rocm-smi --showproductname
+#        OUTPUT_VARIABLE AMD_GPU_LIST
+#        ERROR_QUIET
+#        RESULT_VARIABLE SMI_STATUS)
+#
+#if(SMI_STATUS EQUAL 0 AND NOT AMD_GPU_LIST STREQUAL "")
+#    set(AMD_GPU_PRESENT TRUE)
+#else()
+#    set(AMD_GPU_PRESENT FALSE)
+#endif()
+#
+#set(_sycl_search_dirs ${SYCL_ROOT_DIR} /usr/lib /usr/local/lib
+#        /opt/intel/oneapi/compiler/latest/linux)
+#find_program(
+#        SYCL_COMPILER
+#        NAMES icpx
+#        HINTS ${_sycl_search_dirs}
+#        PATH_SUFFIXES bin)
+#find_path(
+#        SYCL_INCLUDE_DIR
+#        NAMES sycl/sycl.hpp
+#        HINTS ${_sycl_search_dirs}
+#        PATH_SUFFIXES include)
+#find_path(
+#        SYCL_LIB_DIR
+#        NAMES libsycl.so
+#        HINTS ${_sycl_search_dirs}
+#        PATH_SUFFIXES lib)

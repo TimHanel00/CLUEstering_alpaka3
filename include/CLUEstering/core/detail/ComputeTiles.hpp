@@ -27,7 +27,7 @@ namespace clue::detail {
   }
 
   template <concepts::Queue TQueue, std::size_t Ndim, typename TDev>
-  void compute_tile_size(TQueue const& queue,
+  void compute_tile_size(TQueue & queue,
                          internal::CoordinateExtremes<Ndim>* min_max,
                          alpaka::concepts::IMdSpan auto tile_sizes,
                          const PointsDevice<Ndim, TDev>& dev_points,

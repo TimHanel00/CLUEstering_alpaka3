@@ -17,13 +17,13 @@ def dataset():
     '''
     return pd.read_csv("../data/sissa_1000.csv")
 
-def test_cluster_centroids(dataset):
+def test_cluster_centroids(dataset,backend):
     '''
     Test the methods for computing cluster centroids
     '''
     c = clue.clusterer(21., 10., 21.)
     c.read_data(dataset)
-    c.run_clue()
+    c.run_clue(backend=backend)
 
     centroids = c.cluster_centroids()
     assert centroids.shape == (c.n_clusters, c.n_dim)

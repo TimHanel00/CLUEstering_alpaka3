@@ -6,7 +6,7 @@
 #include <tuple>
 #include <vector>
 
-#include "../Run.hpp"
+#include "Run.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -19,7 +19,7 @@ namespace alpaka_cuda_async {
 
   void listDevices(const std::string& backend) {
     const char tab = '\t';
-    const std::vector<Device> devices = alpaka::getDevs(clue::Platform{});
+    const auto devices = clue::DevicePool::devices();
     if (devices.empty()) {
       std::cout << "No devices found for the " << backend << " backend." << std::endl;
       return;

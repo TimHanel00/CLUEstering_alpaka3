@@ -24,7 +24,7 @@ foreach(source IN LISTS sources)
           "${doctest_SOURCE_DIR}/doctest"
   )
 
-  target_link_libraries("${test_name}" PRIVATE
+  target_link_libraries("${test_name}" PUBLIC
           CLUEstering::CLUEstering
           fmt::fmt
   )
@@ -33,7 +33,7 @@ foreach(source IN LISTS sources)
           CLUE_ENABLE_CACHING_ALLOCATOR
           TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../data"
   )
-  clue_finalize(${test_name})
+  alpaka_finalize(${test_name})
 
   add_test(NAME "${test_name}" COMMAND "${test_name}")
 

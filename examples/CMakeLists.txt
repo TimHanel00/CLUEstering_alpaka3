@@ -8,10 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_alpaka_executor_binaries(
         PREFIX basic
-        SOURCES basic/main.cpp
+        SOURCES main.cpp
         LINK_LIBS CLUEstering::CLUEstering
         OUT_TARGETS created_binaries
 )
-foreach(tgt IN LISTS created_binaries)
-    clue_finalize("${tgt}")
-endforeach()
+#foreach(tgt IN LISTS created_binaries)
+#    alpaka_finalize("${tgt}")
+#endforeach()

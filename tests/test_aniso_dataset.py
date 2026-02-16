@@ -9,7 +9,7 @@ import pytest
 from sklearn.metrics import davies_bouldin_score
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
-
+from CLUEstering import all_backends
 @pytest.fixture
 def aniso():
     '''
@@ -17,7 +17,7 @@ def aniso():
     '''
     return pd.read_csv("../data/aniso_1000.csv")
 
-def test_clustering(aniso):
+def test_clustering(aniso,backend):
     '''
     Checks that the output of the clustering is the one given by the
     truth dataset.
@@ -30,7 +30,7 @@ def test_clustering(aniso):
     c = clue.clusterer(28., 5., 28.)
     c.read_data(aniso)
     assert c.n_dim == 2
-    c.run_clue()
+    c.run_clue(backend=backend)
     c.to_csv('./', 'aniso_output.csv')
 
     mask = c.cluster_ids != -1
@@ -40,5 +40,5 @@ def test_clustering(aniso):
 if __name__ == "__main__":
     c = clue.clusterer(25., 5., 23.)
     c.read_data('../data/aniso_1000.csv')
-    c.run_clue()
+    c.run_clue(backend=all_backends()[0])
     c.cluster_plotter()
