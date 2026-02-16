@@ -28,9 +28,7 @@ namespace clue {
     inline auto get_clusters(TQueue& queue, std::span<const int> cluster_ids) {
       auto clustered_points = internal::algorithm::count_if(
           cluster_ids.begin(), cluster_ids.end(), non_negative<int>{});
-      internal::foo(clustered_points);
-      auto ret=internal::make_associator(queue, cluster_ids, static_cast<int>(clustered_points));
-      return ret;
+      return internal::make_associator(queue, cluster_ids, static_cast<int>(clustered_points));
     }
 
   }  // namespace detail

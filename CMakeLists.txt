@@ -34,35 +34,33 @@ if(NOT TARGET CLUEstering::CLUEstering)
         $<BUILD_INTERFACE:${CLUE_GENERATED_INCLUDE_DIR}>
         $<INSTALL_INTERFACE:include>
   )
-
-  # IMPORTANT: only mention alpaka in the BUILD interface (export-safe)
   target_link_libraries(CLUEstering
         INTERFACE
-        $<BUILD_INTERFACE:alpaka::alpaka>)
+        alpaka::alpaka)
 
 
-  install(DIRECTORY include/ DESTINATION include)
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CLUEstering/version.hpp
-        DESTINATION include/CLUEstering)
+#  install(DIRECTORY include/ DESTINATION include)
+#  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CLUEstering/version.hpp
+#        DESTINATION include/CLUEstering)
   #@TODO Issue: current install/export conflicts with alpaka_finalize()
   #@TODO currently either add alpaka as a additional dependency to your target + alpaka_finalize(),
   #@TODO this way you can export CLUEstering with link $<BUILD_INTERFACE:alpaka::alpaka)
   #@TODO the current version only allows builds in tree (here you only need to link CLUEstering::CLUEstering to your targets)
   #
-  ## export old namespace target
-  install(TARGETS CLUEstering EXPORT CLUEsteringTargets-clue)
-  install(
-  EXPORT CLUEsteringTargets-clue
-  FILE CLUEsteringTargets-clue.cmake
-  NAMESPACE clue::
-  DESTINATION lib/cmake/CLUEstering)
+#  ## export old namespace target
+#  install(TARGETS CLUEstering EXPORT CLUEsteringTargets-clue)
+#  install(
+#  EXPORT CLUEsteringTargets-clue
+#  FILE CLUEsteringTargets-clue.cmake
+#  NAMESPACE clue::
+#  DESTINATION lib/cmake/CLUEstering)
   # export new namespace target
-  install(TARGETS CLUEstering EXPORT CLUEsteringTargets)
-  install(
-  EXPORT CLUEsteringTargets
-  FILE CLUEsteringTargets.cmake
-  NAMESPACE CLUEstering::
-  DESTINATION lib/cmake/CLUEstering)
+#  install(TARGETS CLUEstering EXPORT CLUEsteringTargets)
+#  install(
+#  EXPORT CLUEsteringTargets
+#  FILE CLUEsteringTargets.cmake
+#  NAMESPACE CLUEstering::
+#  DESTINATION lib/cmake/CLUEstering)
   file(GLOB _cmake_files "${CMAKE_CURRENT_SOURCE_DIR}/cmake/*.cmake")
   foreach(_cmake_file ${_cmake_files})
   include(${_cmake_file})

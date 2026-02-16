@@ -149,7 +149,7 @@ namespace clue {
                                                    TQueue& queue,
                                                    std::size_t block_size) {
     const std::size_t n_points = h_points.size();
-    m_tiles->template fill(queue, dev_points, n_points);
+    m_tiles->template fill<ALPAKA_TYPEOF(queue)>(queue, dev_points, n_points);
 
     const std::size_t grid_size = alpaka::divCeil(n_points, block_size);
     auto threadSpec = alpaka::onHost::FrameSpec{grid_size, block_size};
@@ -187,7 +187,7 @@ namespace clue {
                                                    TQueue& queue,
                                                    std::size_t block_size) {
     const std::size_t n_points = dev_points.size();
-    m_tiles->template fill(queue, dev_points, n_points);
+    m_tiles->template fill<ALPAKA_TYPEOF(queue)>(queue, dev_points, n_points);
 
     const std::size_t grid_size = alpaka::divCeil(n_points, block_size);
     auto work_division = alpaka::onHost::FrameSpec{grid_size, block_size};
@@ -216,7 +216,7 @@ namespace clue {
                              m_rhoc,
                              n_points);
 
-    m_followers->template fill(queue, dev_points);
+    m_followers->template fill<ALPAKA_TYPEOF(queue)>(queue, dev_points);
     alpaka::onHost::wait(queue);
     detail::assignPointsToClusters(
         queue, block_size, m_seeds.value(), m_followers->view(), dev_points.view());

@@ -1,28 +1,26 @@
 
 #pragma once
 
-#include "CLUEstering/detail/concepts.hpp"
 #include "CLUEstering/internal/alpaka/minMax.hpp"
 #include <limits>
 #include <span>
 #include <stdexcept>
 namespace clue::internal {
 
-  auto foo(auto j) {
-    return j;
-  }
   template <typename TQueue,typename T_Elem>
   inline auto make_associator(TQueue& queue,
                               std::span<const T_Elem> associations,
                               T_Elem elements) {
-    if (elements == 0 || associations.empty())
+    if (elements == 0 || associations.empty()) {
       throw std::invalid_argument("make_associator: elements and associations must be non-zero");
+    }
     auto device=queue.getDevice();
     alpaka::onHost::SharedBuffer compute_buffer_out =
         alpaka::onHost::alloc<T_Elem>(device,alpaka::Vec{1U});
     alpaka::onHost::fill(queue, compute_buffer_out, std::numeric_limits<T_Elem>::lowest());
     auto in_buf_d = alpaka::onHost::alloc<T_Elem>(device, Vec1D{associations.size()}); //non-const input bufffer required
-    alpaka::onHost::memcpy(queue, in_buf_d, associations);
+    auto host_view=alpaka::makeView(queue,associations.data(),Vec1D{associations.size()});
+    alpaka::onHost::memcpy(queue, in_buf_d, host_view);
     alpaka::onHost::reduce(queue,
                                              DevicePool::exec(),
                                              std::numeric_limits<T_Elem>::lowest(),

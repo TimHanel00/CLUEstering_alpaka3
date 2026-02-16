@@ -11,31 +11,31 @@ namespace clue {
   namespace internal {
     struct SelectedBackendAndExec {
 #ifdef alpaka_SELECT_CpuSerial
-      using api = alpaka::api::Host;
+      using apis = std::tuple<alpaka::api::Host>;
       using selectedExec = alpaka::exec::CpuSerial;
 #else
 #ifdef alpaka_SELECT_OMP
-      using api = alpaka::api::Host;
+      using apis = std::tuple<alpaka::api::Host>;
       using selectedExec = alpaka::exec::CpuOmpBlocks;
 #else
 #ifdef alpaka_SELECT_CUDA
-      using api = alpaka::api::Cuda;
+      using apis = std::tuple<alpaka::api::Cuda>;
       using selectedExec = alpaka::exec::GpuCuda;
 #else
 #ifdef alpaka_SELECT_TBB
-      using api = alpaka::api::Host;
+      using apis = std::tuple<alpaka::api::Host>;
       using selectedExec = alpaka::exec::CpuTbbBlocks;
 #else
 #ifdef alpaka_SELECT_HIP
-      using api = alpaka::api::Hip;
+      using apis = std::tuple<alpaka::api::Hip>;
       using selectedExec = alpaka::exec::GpuHip;
 #else
       /***
-            * If no target_compile_definition is specified we simply use the first enabled api
-            * with the first supported executor for this api
+            * If no target_compile_definition is specified we simply use the first enabled
+            * executor for the API it is enabled for.
             * --> this allows backend selection solely based on the alpaka cmake options
             */
-      using api = ALPAKA_TYPEOF(std::get<0>(alpaka::onHost::enabledApis));
+      using apis = ALPAKA_TYPEOF(alpaka::onHost::enabledApis);
       using selectedExec = std::tuple<>;
 #endif
 #endif
@@ -93,17 +93,18 @@ namespace clue {
       return devices;
     }
   }  // namespace internal
-
+  template<typename T>
+  struct Dummy;
   struct DevicePool {
-    using API = internal::SelectedBackendAndExec::api;
+    using APIS = internal::SelectedBackendAndExec::apis;
     using Execs = std::conditional_t<
         std::is_same_v<internal::SelectedBackendAndExec::selectedExec, std::tuple<>>,
         ALPAKA_TYPEOF(alpaka::exec::enabledExecutors),
         std::tuple<internal::SelectedBackendAndExec::selectedExec>>;
     static auto& get() {
-      auto backend = std::get<0>(alpaka::onHost::allBackends(std::tuple<API>{}, Execs{}));
+      auto backend = std::get<0>(alpaka::onHost::allBackends(APIS{}, Execs{}));
       auto device_spec = backend[alpaka::object::deviceSpec];
-      auto dev_selector = makeDeviceSelector(device_spec);
+      auto dev_selector = alpaka::onHost::makeDeviceSelector(device_spec);
       auto exec = backend[alpaka::object::exec];
       static auto dev_pool = internal::DevicePoolImpl{std::move(dev_selector), std::move(exec)};
       return dev_pool;

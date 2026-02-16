@@ -133,47 +133,47 @@ def arrays(dataframe):
     return data_arrays
 
 
-def test_csv(file):
+def test_csv(file,backend):
     """
     Test that CLUE works when the data is written in a csv file.
     """
 
     clust = clue.clusterer(1, 5, 1)
     clust.read_data(file)
-    clust.run_clue()
+    clust.run_clue(backend=backend)
 
 
-def test_dict(dictionary):
+def test_dict(dictionary,backend):
     """
     Test that CLUE works when the data is contained in a dictionary.
     """
 
     clust = clue.clusterer(1, 5, 1)
     clust.read_data(dictionary)
-    clust.run_clue()
+    clust.run_clue(backend=backend)
 
 
-def test_pddf(dataframe):
+def test_pddf(dataframe,backend):
     """
     Test that CLUE works when the data is contained in a pandas dataframe.
     """
 
     clust = clue.clusterer(1, 5, 1)
     clust.read_data(dataframe)
-    clust.run_clue()
+    clust.run_clue(backend=backend)
 
 
-def test_list(lists):
+def test_list(lists,backend):
     """
     Test that CLUE works when the data is contained in lists.
     """
 
     clust = clue.clusterer(1, 5, 1)
     clust.read_data(lists)
-    clust.run_clue()
+    clust.run_clue(backend=backend)
 
 
-def test_ndarray(arrays):
+def test_ndarray(arrays,backend):
     """
     Test that CLUE works when the data is contained in numpy ndarrays.
     """
@@ -181,10 +181,10 @@ def test_ndarray(arrays):
     clust = clue.clusterer(1, 5, 1)
     # test array with data in SoA format
     clust.read_data(arrays)
-    clust.run_clue()
+    clust.run_clue(backend=backend)
 
 
-def test_same_result(file, dictionary, dataframe, lists, arrays):
+def test_same_result(file, dictionary, dataframe, lists, arrays, backend):
     """
     Run CLUE for all the supported data types and assert that the output is the
     same for all of them.
@@ -192,23 +192,23 @@ def test_same_result(file, dictionary, dataframe, lists, arrays):
 
     clust_file = clue.clusterer(1, 5, 1)
     clust_file.read_data(file)
-    clust_file.run_clue()
+    clust_file.run_clue(backend=backend)
 
     clust_dict = clue.clusterer(1, 5, 1)
     clust_dict.read_data(dictionary)
-    clust_dict.run_clue()
+    clust_dict.run_clue(backend=backend)
 
     clust_df = clue.clusterer(1, 5, 1)
     clust_df.read_data(dataframe)
-    clust_df.run_clue()
+    clust_df.run_clue(backend=backend)
 
     clust_list = clue.clusterer(1, 5, 1)
     clust_list.read_data(lists)
-    clust_list.run_clue()
+    clust_list.run_clue(backend=backend)
 
     clust_arr = clue.clusterer(1, 5, 1)
     clust_arr.read_data(arrays)
-    clust_arr.run_clue()
+    clust_arr.run_clue(backend=backend)
 
     assert clust_file.clust_prop == clust_dict.clust_prop
     assert clust_dict.clust_prop == clust_df.clust_prop

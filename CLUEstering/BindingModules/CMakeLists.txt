@@ -33,22 +33,15 @@ pybind11_add_module(CLUE_Convolutional_Kernels SHARED
                     ${CMAKE_CURRENT_SOURCE_DIR}/binding_kernels.cpp)
 target_include_directories(CLUE_Convolutional_Kernels
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
-target_link_libraries(CLUE_Convolutional_Kernels PRIVATE CLUEstering::CLUEstering)
+target_link_libraries(CLUE_Convolutional_Kernels PUBLIC CLUEstering::CLUEstering)
 target_compile_definitions(
   CLUE_Convolutional_Kernels PRIVATE alpaka_SELECT_CpuSerial)
-set_target_properties(
-  CLUE_Convolutional_Kernels
-  PROPERTIES LIBRARY_OUTPUT_DIRECTORY
-             ${CMAKE_CURRENT_BINARY_DIR}/../../lib/CLUEstering/lib/)
-clue_finalize(CLUE_Convolutional_Kernels)
-# copy shared library for local testing
-add_custom_command(
-  TARGET CLUE_Convolutional_Kernels
-  POST_BUILD
-  COMMAND
-    ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_BINARY_DIR}/../../lib/CLUEstering/lib/CLUE_Convolutional_Kernels.*
-    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/)
+set_target_properties(CLUE_Convolutional_Kernels
+        PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY
+        ${PROJECT_SOURCE_DIR}/CLUEstering/lib
+)
+alpaka_finalize(CLUE_Convolutional_Kernels)
 if(alpaka_EXEC_CpuSerial)
   add_subdirectory(serial)
 endif()

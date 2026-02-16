@@ -6,7 +6,7 @@ import pytest
 import sys
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
-
+from CLUEstering import all_backends
 
 @pytest.fixture
 def moons():
@@ -117,7 +117,7 @@ def test_two_out_of_three(blobs):
     assert len(coordsoa_x1x2[0]) == c.clust_data.n_points
 
 
-def test_square_box(square, box):
+def test_square_box(square, box, backend):
     '''
     Compare the clustering of a 2D square with that of a 3D box
     clustered using only two dimensions
@@ -125,12 +125,12 @@ def test_square_box(square, box):
     c1 = clue.clusterer(1., 2., 1.6)
     c1.read_data(square)
     assert c1.n_dim == 2
-    c1.run_clue()
+    c1.run_clue(backend=backend)
 
     c2 = clue.clusterer(1., 2., 1.6)
     c2.read_data(box)
     assert c2.n_dim == 3
-    c2.run_clue(dimensions=[0, 1])
+    c2.run_clue(dimensions=[0, 1],backend=backend)
 
     # check that the result of clustering the 3D dataset using only
     # two dimensions is the same as clustering the 2D dataset
@@ -139,5 +139,5 @@ def test_square_box(square, box):
 if __name__ == "__main__":
     c = clue.clusterer(1., 2., 1.6)
     c.read_data(pd.read_csv("../data/box.csv"))
-    c.run_clue(dimensions=[0, 1])
+    c.run_clue(dimensions=[0, 1],backend=all_backends()[0])
     c.cluster_plotter()

@@ -83,7 +83,7 @@ def test_input_plotter(dataset1d, dataset2d, dataset3d):
     c.input_plotter(filename)
     assert os.path.isfile(filename)
 
-def test_output_plotter(dataset1d, dataset2d, dataset3d):
+def test_output_plotter(dataset1d, dataset2d, dataset3d, backend):
     '''
     Tests the output plotter method of the clusterer
     '''
@@ -97,7 +97,7 @@ def test_output_plotter(dataset1d, dataset2d, dataset3d):
     filename = 'output1d.png'
     c.read_data(dataset1d)
     assert c.n_dim == 1
-    c.run_clue()
+    c.run_clue(backend=backend)
     c.cluster_plotter()
     c.cluster_plotter(grid=True, x_ticks=xticks)
     c.cluster_plotter(filename)
@@ -106,7 +106,7 @@ def test_output_plotter(dataset1d, dataset2d, dataset3d):
     filename = 'output2d.png'
     c.read_data(dataset2d)
     assert c.n_dim == 2
-    c.run_clue()
+    c.run_clue(backend=backend)
     c.cluster_plotter()
     c.cluster_plotter(grid=True, x_ticks=xticks, y_ticks=yticks)
     c.cluster_plotter(filename)
@@ -115,7 +115,7 @@ def test_output_plotter(dataset1d, dataset2d, dataset3d):
     filename = 'output3d.png'
     c.read_data(dataset3d)
     assert c.n_dim == 3
-    c.run_clue()
+    c.run_clue(backend=backend)
     c.cluster_plotter()
     c.cluster_plotter(grid=True, x_ticks=xticks, y_ticks=yticks, z_ticks=zticks)
     c.cluster_plotter(filename)

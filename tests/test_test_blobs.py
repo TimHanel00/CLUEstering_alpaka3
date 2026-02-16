@@ -38,7 +38,7 @@ def test_except_3():
         clust.read_data(clue.test_blobs(n_samples=1000, n_dim=4))
 
 
-def test_2d_clusters():
+def test_2d_clusters(backend):
     '''
     Test test_blobs with 2D clusters
     '''
@@ -47,9 +47,9 @@ def test_2d_clusters():
     # So, we simply check that the clustering runs without errors
     clust = clue.clusterer(0.4, 5., 0.4)
     clust.read_data(clue.test_blobs(n_samples=1000, n_dim=2))
-    clust.run_clue()
+    clust.run_clue(backend=backend)
 
-def test_3d_clusters():
+def test_3d_clusters(backend):
     '''
     Test test_blobs with 3D clusters
     '''
@@ -58,4 +58,4 @@ def test_3d_clusters():
     # So, we simply check that the clustering runs without errors
     clust = clue.clusterer(0.4, 5., 0.4)
     clust.read_data(clue.test_blobs(n_samples=1000, n_dim=3))
-    clust.run_clue()
+    clust.run_clue(backend=backend)
