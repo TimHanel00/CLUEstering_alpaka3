@@ -36,7 +36,7 @@ def toy_det_10000():
     return pd.read_csv("../data/toyDetector_10000.csv")
 
 
-def test_toy_det_1000(toy_det_1000):
+def test_toy_det_1000(toy_det_1000,backend):
     '''
     Checks that the output of the clustering is the one given by the
     truth dataset.
@@ -45,7 +45,7 @@ def test_toy_det_1000(toy_det_1000):
     c = clue.clusterer(4., 2.5, 4.)
     c.read_data(toy_det_1000)
     assert c.n_dim == 2
-    c.run_clue()
+    c.run_clue(backend=backend)
 
     mask = c.cluster_ids != -1
     assert silhouette_score(c.coords.T[mask], c.cluster_ids[mask]) > 0.8

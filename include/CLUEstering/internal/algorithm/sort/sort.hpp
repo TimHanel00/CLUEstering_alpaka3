@@ -3,79 +3,79 @@
 #pragma once
 
 #include <alpaka/alpaka.hpp>
+#include <utility>
 
-#if defined(ALPAKA_ACC_GPU_CUDA_ENABLED) and not defined(ALPAKA_HOST_ONLY)
-#include <thrust/sort.h>
-#include <thrust/execution_policy.h>
-#elif defined(ALPAKA_ACC_GPU_HIP_ENABLED) and not defined(ALPAKA_HOST_ONLY)
-#include <thrust/sort.h>
-#include <thrust/execution_policy.h>
-#elif defined(ALPAKA_ACC_SYCL_ENABLED)
-#include <oneapi/dpl/algorithm>
-#include <oneapi/dpl/execution>
-#else
-#include <algorithm>
-#endif
+#include "CLUEstering/internal/algorithm/backend/AlgoDispatchTag.hpp"
+#include "CLUEstering/internal/algorithm/backend/backendImp.hpp"
 
 namespace clue::internal::algorithm {
 
-  template <typename RandomAccessIterator>
-  ALPAKA_FN_HOST inline constexpr void sort(RandomAccessIterator first, RandomAccessIterator last) {
-#if defined(ALPAKA_ACC_GPU_CUDA_ENABLED) and not defined(ALPAKA_HOST_ONLY)
-    thrust::sort(thrust::device, first, last);
-#elif defined(ALPAKA_ACC_GPU_HIP_ENABLED) and not defined(ALPAKA_HOST_ONLY)
-    thrust::sort(thrust::hip::par, first, last);
-#elif defined(ALPAKA_ACC_SYCL_ENABLED)
-    oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, first, last);
-#else
-    std::sort(first, last);
-#endif
+  template <typename ExecutionPolicy, typename RandomAccessIterator>
+  ALPAKA_FN_HOST constexpr void sort(
+      auto&& anyWithApi,
+      ExecutionPolicy&& policy,
+      RandomAccessIterator first,
+      RandomAccessIterator last)
+  {
+    using Api = ALPAKA_TYPEOF(alpaka::getApi(anyWithApi));
+    using Tag = typename AlgoDispatchTag<Api>::type;
+
+    AlgorithmDispatch::Op<Tag>{}.sort(
+        Api{},
+        std::forward<ExecutionPolicy>(policy),
+        first,
+        last);
   }
 
-  template <typename ExecutionPolicy, typename RandomAccessIterator>
-  ALPAKA_FN_HOST inline constexpr void sort(ExecutionPolicy&& policy,
-                                            RandomAccessIterator first,
-                                            RandomAccessIterator last) {
-#if defined(ALPAKA_ACC_GPU_CUDA_ENABLED) and not defined(ALPAKA_HOST_ONLY)
-    thrust::sort(std::forward<ExecutionPolicy>(policy), first, last);
-#elif defined(ALPAKA_ACC_GPU_HIP_ENABLED) and not defined(ALPAKA_HOST_ONLY)
-    thrust::sort(std::forward<ExecutionPolicy>(policy), first, last);
-#elif defined(ALPAKA_ACC_SYCL_ENABLED)
-    oneapi::dpl::sort(std::forward<ExecutionPolicy>(policy), first, last);
-#else
-    std::sort(std::forward<ExecutionPolicy>(policy), first, last);
-#endif
+  template <typename RandomAccessIterator>
+  ALPAKA_FN_HOST constexpr void sort(
+      auto&& anyWithApi,
+      RandomAccessIterator first,
+      RandomAccessIterator last)
+  {
+    using Api = ALPAKA_TYPEOF(alpaka::getApi(anyWithApi));
+    using Tag = typename AlgoDispatchTag<Api>::type;
+
+    AlgorithmDispatch::Op<Tag>{}.sort(
+        Api{},
+        first,
+        last);
   }
 
   template <typename RandomAccessIterator, typename Compare>
-  ALPAKA_FN_HOST inline constexpr void sort(RandomAccessIterator first,
-                                            RandomAccessIterator last,
-                                            Compare comp) {
-#if defined(ALPAKA_ACC_GPU_CUDA_ENABLED) and not defined(ALPAKA_HOST_ONLY)
-    thrust::sort(thrust::device, first, last, comp);
-#elif defined(ALPAKA_ACC_GPU_HIP_ENABLED) and not defined(ALPAKA_HOST_ONLY)
-    thrust::sort(thrust::hip::par, first, last, comp);
-#elif defined(ALPAKA_ACC_SYCL_ENABLED)
-    oneapi::dpl::sort(oneapi::dpl::execution::dpcpp_default, first, last, comp);
-#else
-    std::sort(first, last, comp);
-#endif
+  ALPAKA_FN_HOST constexpr void sort(
+      auto&& anyWithApi,
+      RandomAccessIterator first,
+      RandomAccessIterator last,
+      Compare comp)
+  {
+    using Api = ALPAKA_TYPEOF(alpaka::getApi(anyWithApi));
+      using Tag = typename AlgoDispatchTag<Api>::type;
+
+    AlgorithmDispatch::Op<Tag>{}.sort(
+        Api{},
+        first,
+        last,
+        comp);
   }
 
   template <typename ExecutionPolicy, typename RandomAccessIterator, typename Compare>
-  ALPAKA_FN_HOST inline constexpr void sort(ExecutionPolicy&& policy,
-                                            RandomAccessIterator first,
-                                            RandomAccessIterator last,
-                                            Compare comp) {
-#if defined(ALPAKA_ACC_GPU_CUDA_ENABLED) and not defined(ALPAKA_HOST_ONLY)
-    thrust::sort(std::forward<ExecutionPolicy>(policy), first, last, comp);
-#elif defined(ALPAKA_ACC_GPU_HIP_ENABLED) and not defined(ALPAKA_HOST_ONLY)
-    thrust::sort(std::forward<ExecutionPolicy>(policy), first, last, comp);
-#elif defined(ALPAKA_ACC_SYCL_ENABLED)
-    oneapi::dpl::sort(std::forward<ExecutionPolicy>(policy), first, last, comp);
-#else
-    std::sort(std::forward<ExecutionPolicy>(policy), first, last, comp);
-#endif
+  ALPAKA_FN_HOST constexpr void sort(
+      auto&& anyWithApi,
+      ExecutionPolicy&& policy,
+      RandomAccessIterator first,
+      RandomAccessIterator last,
+      Compare comp)
+  {
+    using Api = ALPAKA_TYPEOF(alpaka::getApi(anyWithApi));
+      using Tag = typename AlgoDispatchTag<Api>::type;
+
+    AlgorithmDispatch::Op<Tag>{}.sort(
+        Api{},
+        std::forward<ExecutionPolicy>(policy),
+        first,
+        last,
+        comp);
   }
 
-}  // namespace clue::internal::algorithm
+} // namespace clue::internal::algorithm

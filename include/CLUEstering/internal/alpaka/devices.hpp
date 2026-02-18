@@ -75,6 +75,12 @@ namespace clue {
         throw std::runtime_error("clue::DevicePool: device not found");
       }
       explicit DevicePoolImpl(T_DevSelector selector, T_Exec exec) : m_exec(exec) {
+        if(!selector.isAvailable())
+        {
+          throw std::runtime_error(
+            std::string{"No device available!"}
+          );
+        }
         m_devices.reserve(selector.getDeviceCount());
         for (uint32_t dev_id = 0; dev_id < selector.getDeviceCount(); ++dev_id) {
           m_devices.emplace_back(selector.makeDevice(dev_id));
@@ -87,14 +93,18 @@ namespace clue {
     template <typename T_DeviceSelector>
     auto devices(T_DeviceSelector const& selector) {
       std::vector<ALPAKA_TYPEOF(selector.makeDevice(0U))> devices;
+      if(!selector.isAvailable())
+      {
+        throw std::runtime_error(
+          std::string{"No device available!"}
+        );
+      }
       for (uint32_t dev_id = 0; dev_id < selector.getDeviceCount(); dev_id++) {
         devices.emplace_back(selector.makeDevice(dev_id));
       }
       return devices;
     }
   }  // namespace internal
-  template<typename T>
-  struct Dummy;
   struct DevicePool {
     using APIS = internal::SelectedBackendAndExec::apis;
     using Execs = std::conditional_t<

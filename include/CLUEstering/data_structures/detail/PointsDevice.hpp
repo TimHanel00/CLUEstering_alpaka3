@@ -15,6 +15,7 @@
 #include <optional>
 #include <span>
 #include <tuple>
+#include <CLUEstering/internal/algorithm/extrema/extrema.hpp>
 
 namespace clue {
 
@@ -266,19 +267,15 @@ namespace clue {
            "The points have to be clustered before the cluster properties can be accessed");
     if (!m_nclusters.has_value()) {
       auto cluster_ids = this->clusterIndexes();
-      auto cluster_id_view=alpaka::makeView(queue,static_cast<int*>(cluster_ids.data()),Vec1D{cluster_ids.size()});
-      int32_t hostVal{0};
-      auto hostView = alpaka::makeView(alpaka::api::host,&hostVal,alpaka::Vec{1U});
-      auto devOutBuf = alpaka::onHost::allocLike(m_device, hostView);
-      alpaka::onHost::reduce(queue,
-                             DevicePool::exec(),
-                             std::numeric_limits<int32_t>::lowest(),
-                             devOutBuf,
-                             internal::simdMax(),
-                             cluster_id_view);
-      alpaka::onHost::memcpy(queue, hostView, devOutBuf);
+      using T_Elem=typename ALPAKA_TYPEOF(cluster_ids)::value_type;
+      auto it_max=internal::algorithm::max_element(queue, cluster_ids.begin(), cluster_ids.end());
+      T_Elem host_val{0};
+      auto ptr = std::to_address(it_max);
+      auto view=alpaka::makeView(alpaka::api::host,&host_val,Vec1D{T_Elem{1}});
+      auto dev_view=alpaka::makeView(queue,ptr,Vec1D{T_Elem{1}});
+      alpaka::onHost::memcpy(queue, view, dev_view,Vec1D{T_Elem{1}});
       alpaka::onHost::wait(queue);
-      m_nclusters = hostVal + 1;
+      m_nclusters = host_val + 1;
     }
 
     return m_nclusters.value();

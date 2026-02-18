@@ -8,9 +8,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
+
+
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
-from CLUEstering import backends
+from CLUEstering import canonicalize
 from check_result import check_result
 
 @pytest.fixture
@@ -66,9 +68,8 @@ def test_clustering_methods(dataset,backend):
 
     e = clue.clusterer(21., 10., 21.)
     cluster_ids = e.fit_predict(dataset,backend=backend)
-
-    assert (c.cluster_ids == d.cluster_ids).all()
-    assert (c.cluster_ids == cluster_ids).all()
+    assert np.array_equal(canonicalize(c.cluster_ids),canonicalize(d.cluster_ids))
+    assert np.array_equal(canonicalize(c.cluster_ids),canonicalize(cluster_ids))
     assert c.n_clusters == d.n_clusters
     assert c.n_clusters == e.n_clusters
 

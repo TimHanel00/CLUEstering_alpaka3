@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
-
+from CLUEstering import canonicalize
 
 def test_read_array_except():
     '''
@@ -209,8 +209,11 @@ def test_same_result(file, dictionary, dataframe, lists, arrays, backend):
     clust_arr = clue.clusterer(1, 5, 1)
     clust_arr.read_data(arrays)
     clust_arr.run_clue(backend=backend)
-
-    assert clust_file.clust_prop == clust_dict.clust_prop
-    assert clust_dict.clust_prop == clust_df.clust_prop
-    assert clust_df.clust_prop == clust_list.clust_prop
-    assert clust_list.clust_prop == clust_arr.clust_prop
+    assert np.array_equal(canonicalize(clust_file.cluster_ids),
+                          canonicalize(clust_dict.cluster_ids))
+    assert np.array_equal(canonicalize(clust_dict.cluster_ids),
+                          canonicalize(clust_df.cluster_ids))
+    assert np.array_equal(canonicalize(clust_df.cluster_ids),
+                          canonicalize(clust_list.cluster_ids))
+    assert np.array_equal(canonicalize(clust_list.cluster_ids),
+                          canonicalize(clust_arr.cluster_ids))

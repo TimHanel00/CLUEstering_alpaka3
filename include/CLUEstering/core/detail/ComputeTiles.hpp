@@ -33,30 +33,34 @@ namespace clue::detail {
                          const PointsDevice<Ndim, TDev>& dev_points,
                          uint32_t nPerDim) {
     for (size_t dim{}; dim != Ndim; ++dim) {
-      auto d_max = make_device_buffer<float>(queue, 1U);
-      auto d_min = make_device_buffer<float>(queue, 1U);
-
       auto coords = dev_points.coords(dim);
-      auto devCoordsView=alpaka::makeView(queue,coords.data(), Vec1D{coords.size()});
-      alpaka::onHost::reduce(queue,
-                             DevicePool::exec(),
-                             std::numeric_limits<float>::lowest(),
-                             d_max,
-                             internal::simdMax(),
-                             devCoordsView);
-
-      alpaka::onHost::reduce(queue,
-                             DevicePool::exec(),
-                             std::numeric_limits<float>::max(),
-                             d_min,
-                             internal::simdMin(),
-                             devCoordsView);
-
-      float h_max{};
-      float h_min{};
-      alpaka::onHost::memcpy(queue, makeView(alpaka::api::host,&h_max,Vec1D{1U}), d_max);
-      alpaka::onHost::memcpy(queue, makeView(alpaka::api::host,&h_min,Vec1D{1U}), d_min);
-      alpaka::onHost::wait(queue);
+      auto [itmin,itmax] = internal::algorithm::minmax_element(queue, coords.begin(), coords.end());
+      float h_min{0};
+      float h_max{0};
+      auto ptr_min = std::to_address(itmin);
+      auto ptr_max = std::to_address(itmax);
+      alpaka::onHost::memcpy(queue, makeView(alpaka::api::host,&h_min,Vec1D{float{1}}), alpaka::makeView(queue,ptr_min,Vec1D{float{1}}),Vec1D{float{1}});
+      alpaka::onHost::memcpy(queue, makeView(alpaka::api::host,&h_max,Vec1D{float{1}}), alpaka::makeView(queue,ptr_max,Vec1D{float{1}}),Vec1D{float{1}});
+      // alpaka::onHost::wait(queue);
+      // alpaka::onHost::reduce(queue,
+      //                        DevicePool::exec(),
+      //                        std::numeric_limits<float>::lowest(),
+      //                        d_max,
+      //                        internal::simdMax(),
+      //                        devCoordsView);
+      //
+      // alpaka::onHost::reduce(queue,
+      //                        DevicePool::exec(),
+      //                        std::numeric_limits<float>::max(),
+      //                        d_min,
+      //                        internal::simdMin(),
+      //                        devCoordsView);
+      //
+      // float h_max{};
+      // float h_min{};
+      // alpaka::onHost::memcpy(queue, makeView(alpaka::api::host,&h_max,Vec1D{1U}), d_max);
+      // alpaka::onHost::memcpy(queue, makeView(alpaka::api::host,&h_min,Vec1D{1U}), d_min);
+      // alpaka::onHost::wait(queue);
       min_max->min(dim) = h_min;
       min_max->max(dim) = h_max;
 

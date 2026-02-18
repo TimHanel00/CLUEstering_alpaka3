@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(CLUE_Tests LANGUAGES CXX)
+project(CLUE_Tests)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -20,20 +20,20 @@ foreach(source IN LISTS sources)
   add_executable("${test_name}" "${source}")
 
   target_include_directories("${test_name}" PRIVATE
-          "${CMAKE_SOURCE_DIR}/../include"
           "${doctest_SOURCE_DIR}/doctest"
   )
-
+#  target_link_libraries("${test_name}" PRIVATE
+#          fmt::fmt
+#  )
   target_link_libraries("${test_name}" PUBLIC
           CLUEstering::CLUEstering
-          fmt::fmt
   )
-
+  alpaka_finalize(${test_name})
   target_compile_definitions("${test_name}" PRIVATE
           CLUE_ENABLE_CACHING_ALLOCATOR
           TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../data"
   )
-  alpaka_finalize(${test_name})
+
 
   add_test(NAME "${test_name}" COMMAND "${test_name}")
 
