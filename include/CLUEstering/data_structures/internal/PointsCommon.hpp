@@ -92,7 +92,7 @@ namespace clue {
 
   template <std::size_t Ndim>
   class PointsHost;
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
   class PointsDevice;
 
 }  // namespace clue

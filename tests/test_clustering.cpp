@@ -19,16 +19,17 @@ TEST_CASE("Test clustering on benchmarking datasets") {
   auto queue = device.makeQueue();
 
   const float dc{1.5f}, rhoc{10.f}, outlier{1.5f};
-  clue::Clusterer<ALPAKA_TYPEOF(queue), 2> algo(queue, dc, rhoc, outlier);
+  clue::Dim<2> dim{};
+  clue::Clusterer algo(queue, dim, dc, rhoc, outlier);
 
   for (auto i = range.first; i < range.second; ++i) {
     const auto n = static_cast<std::size_t>(std::pow(2.0, i)); // or (1u << i) since i is int
     const auto test_file_path =
         std::string(TEST_DATA_DIR) + "/data_" + std::to_string(n) + ".csv";
 
-    clue::PointsHost<2> h_points = clue::read_csv<2>(test_file_path);
+    clue::PointsHost h_points = clue::read_csv(dim, test_file_path);
     const auto n_points = h_points.size();
-    clue::PointsDevice<2, ALPAKA_TYPEOF(device)> d_points(device, n_points);
+    clue::PointsDevice d_points{device, dim,  n_points};
 
     algo.make_clusters(queue, h_points, d_points);
 
@@ -41,12 +42,13 @@ TEST_CASE("Test clustering on aniso dataset") {
   auto queue=device.makeQueue();
 
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/aniso_1000.csv";
-  clue::PointsHost<2> h_points = clue::read_csv<2>(test_file_path);
+  clue::Dim<2> dim{};
+  clue::PointsHost h_points = clue::read_csv(dim,test_file_path);
   const auto n_points = h_points.size();
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, n_points);
+  clue::PointsDevice d_points{device, dim,  n_points};
 
   const float dc{25.f}, rhoc{5.f}, outlier{23.f};
-  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer algo(queue, dim, dc, rhoc, outlier);
 
   algo.make_clusters(queue, h_points, d_points);
   // TODO: use a better metric for anisotropic data
@@ -59,12 +61,15 @@ TEST_CASE("Test clustering on sissa 1000 dataset") {
   auto queue=device.makeQueue();
 
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/sissa_1000.csv";
-  clue::PointsHost<2> h_points = clue::read_csv<2>( test_file_path);
+  auto dim = ::clue::Dim<2>{};
+  clue::PointsHost h_points = clue::read_csv(dim, test_file_path);
   const auto n_points = h_points.size();
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, n_points);
+  
+
+  clue::PointsDevice d_points{device, dim,  n_points};
 
   const float dc{20.f}, rhoc{10.f}, outlier{20.f};
-  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer algo(queue, dim, dc, rhoc, outlier);
 
   algo.make_clusters(queue, h_points, d_points);
 
@@ -76,12 +81,15 @@ TEST_CASE("Test clustering on sissa 4000 dataset") {
   auto queue=device.makeQueue();
 
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/sissa_4000.csv";
-  clue::PointsHost<2> h_points = clue::read_csv<2>(test_file_path);
+  clue::Dim<2> dim{};
+  clue::PointsHost h_points = read_csv(dim, test_file_path);
   const auto n_points = h_points.size();
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, n_points);
+  
+
+  clue::PointsDevice d_points{device, dim,  n_points};
 
   const float dc{20.f}, rhoc{10.f}, outlier{20.f};
-  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer algo(queue, dim, dc, rhoc, outlier);
 
   algo.make_clusters(queue, h_points, d_points);
 
@@ -91,14 +99,14 @@ TEST_CASE("Test clustering on sissa 4000 dataset") {
 TEST_CASE("Test clustering on toy detector 1000 dataset") {
   auto device = clue::DevicePool::deviceAt(0u);
   auto queue=device.makeQueue();
-
+  clue::Dim<2> dim{};
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/toyDetector_1000.csv";
-  clue::PointsHost<2> h_points = clue::read_csv<2>( test_file_path);
+  clue::PointsHost h_points = clue::read_csv(dim, test_file_path);
   const auto n_points = h_points.size();
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, n_points);
+  clue::PointsDevice d_points{device, dim,  n_points};
 
   const float dc{4.f}, rhoc{2.5f}, outlier{4.f};
-  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer algo(queue, dim, dc, rhoc, outlier);
 
   algo.make_clusters(queue, h_points, d_points);
 
@@ -108,14 +116,14 @@ TEST_CASE("Test clustering on toy detector 1000 dataset") {
 TEST_CASE("Test clustering on blob dataset") {
   auto device = clue::DevicePool::deviceAt(0u);
   auto queue=device.makeQueue();
-
+  clue::Dim<3> dim{};
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/blob.csv";
-  clue::PointsHost<3> h_points = clue::read_csv<3>(test_file_path);
+  clue::PointsHost h_points = read_csv(dim, test_file_path);
   const auto n_points = h_points.size();
-  clue::PointsDevice<3,ALPAKA_TYPEOF(device)> d_points(device, n_points);
+  clue::PointsDevice d_points(device,dim, n_points);
 
   const float dc{1.f}, rhoc{5.f}, outlier{2.f};
-  clue::Clusterer<ALPAKA_TYPEOF(queue),3> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer algo(queue, dim, dc, rhoc, outlier);
 
   algo.make_clusters(queue, h_points, d_points);
 
@@ -127,15 +135,16 @@ TEST_CASE("Test clustering on data with periodic coordinates") {
   auto queue=device.makeQueue();
 
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/opposite_angles.csv";
-  clue::PointsHost<2> points = clue::read_csv<2>(test_file_path);
+  clue::Dim<2> dim{};
+  clue::PointsHost points = clue::read_csv(dim, test_file_path);
   const float dc{.2f}, rhoc{5.f}, outlier{.2f};
-  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer algo(queue, dim, dc, rhoc, outlier);
 
   algo.setWrappedCoordinates(0, 1);
   algo.make_clusters(
       queue,
       points,
-      clue::metrics::PeriodicEuclidean(std::array<float, 2>{0.f, 2.f * std::numbers::pi_v<float>}));
+      clue::metrics::PeriodicEuclidean<2>(std::array<float, 2>{0.f, 2.f * std::numbers::pi_v<float>}));
   // TODO: reimplement wrapped coordinates before 2.9.0
   CHECK(points.n_clusters() == 1);
 }

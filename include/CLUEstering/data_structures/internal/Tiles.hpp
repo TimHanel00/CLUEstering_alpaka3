@@ -90,34 +90,10 @@ namespace clue::internal {
 
     // requires(::clue::concepts::NonHostApi<DevType<TQueue>>)
     template <::clue::concepts::Queue TQueue>
-    ALPAKA_FN_HOST void fill(TQueue& queue, PointsDevice<Ndim, TDev>& d_points, size_t size) {
+    ALPAKA_FN_HOST void fill(TQueue& queue, PointsDevice< TDev,Ndim>& d_points, size_t size) {
       auto pointsView = d_points.view();
       m_assoc.fill(queue, size, GetGlobalBin{pointsView, m_view});
     }
-    // template < ::clue::concepts::Queue TQueue>
-    // requires(::clue::concepts::HostApi<DevType<TQueue>>)
-    // ALPAKA_FN_HOST void fill(TQueue& queue, PointsDevice<Ndim, TDev>& d_points, size_t size) {
-    //   std::vector<typename decltype(m_assoc)::key_type> associations(size);
-    //
-    //   auto pointsView = d_points.view();
-    //   GetGlobalBin binFunc{pointsView, m_view};
-    //
-    //   for (size_t i = 0; i < size; ++i) {
-    //     associations[i] = binFunc(i);
-    //   }
-    //
-    //   m_assoc.fill(associations);
-    // }
-
-    // ALPAKA_FN_HOST auto& minMax() {
-    //   return m_minmax;
-    // }
-    // ALPAKA_FN_HOST auto& tileSize()  {
-    //   return m_tilesizes;
-    // }
-    // ALPAKA_FN_HOST auto& wrapped(){
-    //   return m_wrapped;
-    // }
 
     ALPAKA_FN_HOST inline constexpr auto size() const { return m_ntiles; }
 

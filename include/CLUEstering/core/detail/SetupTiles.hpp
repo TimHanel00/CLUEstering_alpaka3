@@ -53,7 +53,7 @@ namespace clue::detail {
             alpaka::onHost::concepts::Device TDev = decltype(std::declval<TQueue>().getDevice())>
   void setup_tiles(TQueue& queue,
                    std::optional<internal::Tiles<Ndim, TDev>>& tiles,
-                   const PointsDevice<Ndim, TDev>& points,
+                   const PointsDevice<TDev,Ndim>& points,
                    int points_per_tile,
                    const std::array<uint8_t, Ndim>& wrapped_coordinates) {
     auto ntiles =

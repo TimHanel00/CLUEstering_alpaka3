@@ -11,7 +11,8 @@
 
 TEST_CASE("Test host points with internal allocation") {
   const uint32_t size = 1000;
-  clue::PointsHost<2> h_points(size);
+  auto dim = clue::Dim<2>{};
+  clue::PointsHost h_points(dim,size);
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -55,9 +56,10 @@ TEST_CASE("Test host points with internal allocation") {
 
 TEST_CASE("Test host points with external allocation of whole buffer") {
   const uint32_t size = 1000;
-  std::vector<std::byte> buffer(clue::soa::host::computeSoASize<2>(size));
+  auto dim = clue::Dim<2>{};
+  std::vector<std::byte> buffer(clue::soa::host::computeSoASize(dim,size));
 
-  clue::PointsHost<2> h_points(size, std::span(buffer.data(), buffer.size()));
+  clue::PointsHost h_points(dim,size, std::span(buffer.data(), buffer.size()));
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -103,8 +105,8 @@ TEST_CASE("Test host points with external allocation passing two buffers as span
   const uint32_t size = 1000;
   std::vector<float> input(3 * size);
   std::vector<int> output(2 * size);
-
-  clue::PointsHost<2> h_points(size, std::span(input.data(), input.size()), std::span(output.data(), output.size()));
+  auto dim = clue::Dim<2>{};
+  clue::PointsHost h_points(dim,size, std::span(input.data(), input.size()), std::span(output.data(), output.size()));
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -150,8 +152,8 @@ TEST_CASE("Test host points with external allocation passing two buffers as vect
   const uint32_t size = 1000;
   std::vector<float> input(3 * size);
   std::vector<int> output(2 * size);
-
-  clue::PointsHost<2> h_points(size, input, output);
+  auto dim = clue::Dim<2>{};
+  clue::PointsHost h_points(dim, size, input, output);
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -197,8 +199,8 @@ TEST_CASE("Test host points with external allocation passing two buffers as poin
   const uint32_t size = 1000;
   std::vector<float> input(3 * size);
   std::vector<int> output(2 * size);
-
-  clue::PointsHost<2> h_points(size, input.data(), output.data());
+  auto dim = clue::Dim<2>{};
+  clue::PointsHost h_points(dim, size, input.data(), output.data());
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -246,8 +248,8 @@ TEST_CASE("Test host points with external allocation passing four buffers as spa
   std::vector<float> coords_vector(2 * size);
   std::vector<float> weights_vector(size);
   std::vector<int> cluster_ids_vector(size);
-
-  clue::PointsHost<2> h_points(size,
+  auto dim = clue::Dim<2>{};
+  clue::PointsHost h_points(dim, size,
                                std::span(coords_vector.data(), coords_vector.size()),
                                std::span(weights_vector.data(), weights_vector.size()),
                                std::span(cluster_ids_vector.data(), cluster_ids_vector.size()));
@@ -298,8 +300,8 @@ TEST_CASE("Test host points with external allocation passing four buffers as vec
   std::vector<float> coords_vector(2 * size);
   std::vector<float> weights_vector(size);
   std::vector<int> cluster_ids_vector(size);
-
-  clue::PointsHost<2> h_points(size, coords_vector, weights_vector, cluster_ids_vector);
+  auto dim = clue::Dim<2>{};
+  clue::PointsHost h_points(dim, size, coords_vector, weights_vector, cluster_ids_vector);
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -346,8 +348,8 @@ TEST_CASE("Test host points with external allocation passing four buffers as poi
   std::vector<float> coords_vector(2 * size);
   std::vector<float> weights_vector(size);
   std::vector<int> cluster_ids_vector(size);
-
-  clue::PointsHost<2> h_points(size, coords_vector.data(), weights_vector.data(), cluster_ids_vector.data());
+  auto dim = clue::Dim<2>{};
+  clue::PointsHost h_points(dim, size, coords_vector.data(), weights_vector.data(), cluster_ids_vector.data());
   auto view = h_points.view();
 
   CHECK(view.n == size);
@@ -391,8 +393,8 @@ TEST_CASE("Test host points with external allocation passing four buffers as poi
 
 TEST_CASE("Test point accessor") {
   const uint32_t size = 1000;
-
-  clue::PointsHost<2> points(size);
+  auto dim = clue::Dim<2>{};
+  clue::PointsHost points(dim, size);
   std::iota(points.coords(0).begin(), points.coords(1).end(), 0.f);
   std::fill(points.weights().begin(), points.weights().end(), 1.f);
 
@@ -410,21 +412,23 @@ TEST_CASE("Test point accessor") {
 }
 
 TEST_CASE("Test constructor throwing conditions") {
-  CHECK_THROWS(clue::PointsHost<2>(0));
-  CHECK_THROWS(clue::PointsHost<2>(-5));
+  auto dim = clue::Dim<2>{};
+  CHECK_THROWS(clue::PointsHost(dim,0));
+  CHECK_THROWS(clue::PointsHost(dim,-5));
 }
 
 TEST_CASE("Test coordinate getter throwing conditions") {
   SUBCASE("Const points") {
     const uint32_t size = 1000;
-    clue::PointsHost<2> points( size);
+    auto dim = clue::Dim<2>{};
+    clue::PointsHost points(dim, size);
     CHECK_THROWS(points.coords(3));
     CHECK_THROWS(points.coords(10));
   }
   SUBCASE("Non-const points") {
     const uint32_t size = 1000;
-
-    const clue::PointsHost<2> points(size);
+    auto dim = clue::Dim<2>{};
+    const clue::PointsHost points(dim, size);
     CHECK_THROWS(points.coords(3));
     CHECK_THROWS(points.coords(10));
   }
@@ -433,9 +437,10 @@ TEST_CASE("Test coordinate getter throwing conditions") {
 TEST_CASE("Test cluster properties accessors") {
   auto queue = clue::get_queue(0u);
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/data_32768.csv";
-  clue::PointsHost<2> h_points = clue::read_csv<2>(test_file_path);
+  auto dim = clue::Dim<2>{};
+  clue::PointsHost h_points = clue::read_csv(dim, test_file_path);
   const float dc{1.3f}, rhoc{10.f}, outlier{1.3f};
-  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer algo(queue,dim, dc, rhoc, outlier);
   algo.make_clusters(queue, h_points);
 
   SUBCASE("Test get number of clusters") {

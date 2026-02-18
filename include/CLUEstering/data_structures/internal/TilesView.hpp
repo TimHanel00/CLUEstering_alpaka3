@@ -81,16 +81,16 @@ namespace clue::internal {
       }
     }
 
-    ALPAKA_FN_ACC inline constexpr auto operator[](int32_t globalBinId) {
+    constexpr auto operator[](int32_t globalBinId) {
       const auto offset0 = offsets[globalBinId];
       const auto offset1 = offsets[globalBinId + 1];
 
       int32_t* buf_ptr = indexes + offset0;
-
-      return std::span(buf_ptr,static_cast<size_t>(offset1 - offset0));
+      // Note: this template instantiation is NOT redundant since CTAD uses functions not marked __host__ __device__
+      return std::span<int,std::dynamic_extent>{buf_ptr,static_cast<size_t>(offset1 - offset0)};
     }
 
-    ALPAKA_FN_ACC inline constexpr float normalizeCoordinate(float coord, int dim) const {
+    constexpr float normalizeCoordinate(float coord, int dim) const {
       const float range = minmax->range(dim);
       float remainder = coord - static_cast<int>(coord / range) * range;
       if (remainder >= minmax->max(dim))

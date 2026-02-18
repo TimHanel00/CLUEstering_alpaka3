@@ -62,8 +62,9 @@ int main(int argc, char* argv[]) {
   auto device = queue.getDevice();
   // Allocate the points on the host and device.
   clue::PointsHost<2> h_points = clue::read_csv<2>(csv_path);
-
-  auto d_points = clue::PointsDevice<2, ALPAKA_TYPEOF(device)>(device, h_points.size());
+  // specify the dimension in a CVec-wrapper to enable CTAD
+  auto dim=::clue::Dim<std::size_t, 2>{};
+  auto d_points = clue::PointsDevice{device,dim, h_points.size()};
 
   // Define the parameters for the clustering
   const float dc = 20.f, rhoc = 10.f, outlier = 20.f;

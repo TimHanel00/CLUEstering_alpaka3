@@ -33,7 +33,7 @@ namespace clue {
     using CoordinateExtremes = internal::CoordinateExtremes<Ndim>;
     using TPointsHost = PointsHost<Ndim>;
     using TDev = DevType<TQueue>;
-    using TPointsDevice = PointsDevice<Ndim, TDev>;
+    using TPointsDevice = PointsDevice<TDev,Ndim>;
     using TilesDevice = internal::Tiles<Ndim, TDev>;
     using FollowersDevice = Followers<TDev>;
 
@@ -74,25 +74,15 @@ namespace clue {
   public:
     /// @brief Constuct a Clusterer object
     ///
-    /// @param dc Distance threshold for clustering.
-    /// @param rhoc Density threshold for clustering
-    /// @param dm Minimum distance between clusters. This parameter is optional and by default dc is used.
-    /// @param seed_dc Distance threshold for seed points. This parameter is optional and by default dc is used.
-    /// @param pPBin Number of points per bin, used to determine the tile size
-    Clusterer(float dc,
-              float rhoc,
-              std::optional<float> dm = std::nullopt,
-              std::optional<float> seed_dc = std::nullopt,
-              int pPBin = 128);
-    /// @brief Constuct a Clusterer object
-    ///
-    /// @param queue The queue to use for the device operations
+    /// @param queue The queue which is used to sync the Clusterer initialization - its not saved internally as a member
+    /// @param dim The number of dimensions of the points to cluster
     /// @param dc Distance threshold for clustering.
     /// @param rhoc Density threshold for clustering
     /// @param dm Minimum distance between clusters. This parameter is optional and by default dc is used.
     /// @param seed_dc Distance threshold for seed points. This parameter is optional and by default dc is used.
     /// @param pPBin Number of points per bin, used to determine the tile size
     Clusterer(TQueue& queue,
+              Dim<Ndim> dim,
               float dc,
               float rhoc,
               std::optional<float> dm = std::nullopt,
@@ -203,7 +193,29 @@ namespace clue {
     /// @return An device associator mapping clusters and points
     auto getClusters(TQueue& queue, const TPointsDevice& d_points);
   };
-
+  // provided a deduction guid mainly clang/hip toolchain struggles with CTAD for the clusterer
+  // deduction guide
+  template <concepts::Queue Q, std::size_t N>
+  Clusterer(
+      Q&,
+      Dim<N>,
+      float,
+      float,
+      std::optional<float>,
+      std::optional<float>,
+      int
+  ) -> Clusterer<std::remove_cvref_t<Q>, N>;
+  // deduction guide (constref Dimension)
+  template <concepts::Queue Q, std::size_t N>
+  Clusterer(
+      Q&,
+      Dim<N> const&,
+      float,
+      float,
+      std::optional<float>,
+      std::optional<float>,
+      int
+  ) -> Clusterer<std::remove_cvref_t<Q>, N>;
 }  // namespace clue
 
 #include "CLUEstering/core/detail/Clusterer.hpp"

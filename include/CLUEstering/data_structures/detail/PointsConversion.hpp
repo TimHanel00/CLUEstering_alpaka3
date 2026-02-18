@@ -14,7 +14,7 @@ namespace clue {
   inline void copyToHost(THost& host_dev,
                          TQueue& queue,
                          PointsHost<Ndim>& h_points,
-                         const PointsDevice<Ndim, DevType<TQueue>>& d_points) {
+                         const PointsDevice<DevType<TQueue>,Ndim>& d_points) {
     alpaka::onHost::memcpy(
         queue,
         //@TODO here we can use inplace alpaka functions no wrappers (mayby think about the mapped allocation)
@@ -25,7 +25,7 @@ namespace clue {
   }
 
   template <concepts::Queue TQueue, std::size_t Ndim>
-  inline auto copyToHost(TQueue& queue, const PointsDevice<Ndim, DevType<TQueue>>& d_points) {
+  inline auto copyToHost(TQueue& queue, const PointsDevice<DevType<TQueue>,Ndim>& d_points) {
     PointsHost<Ndim> h_points(queue, d_points.size());
 
     alpaka::onHost::memcpy(
@@ -39,7 +39,7 @@ namespace clue {
 
   template <concepts::Queue TQueue, std::size_t Ndim>
   inline void copyToDevice(TQueue& queue,
-                           PointsDevice<Ndim, DevType<TQueue>>& d_points,
+                           PointsDevice<DevType<TQueue>,Ndim>& d_points,
                            const PointsHost<Ndim>& h_points) {
     meta::apply<Ndim>([&]<std::size_t Dim> {
       alpaka::onHost::memcpy(
@@ -56,7 +56,7 @@ namespace clue {
 
   template <concepts::Queue TQueue, std::size_t Ndim>
   inline auto copyToDevice(TQueue& queue, const PointsHost<Ndim>& h_points) {
-    PointsDevice<Ndim, DevType<TQueue>> d_points(queue, h_points.size());
+    PointsDevice<DevType<TQueue>,Ndim> d_points(queue, h_points.size());
 
     meta::apply<Ndim>([&]<std::size_t Dim> {
       alpaka::onHost::memcpy(

@@ -66,11 +66,13 @@ TEST_CASE("Test throwing conditions") {
 
   SUBCASE("Test construction throwing conditions") {
     CHECK_THROWS(
-        clue::internal::make_associator(queue, std::span<const int32_t>(associations.data(), 0), 0));
+        clue::internal::make_associator(std::span<const int32_t>(associations.data(), 0), 0));
   }
-
+// here we have to use a host associator
+// since we try to access host memory on the device during map construction
+// -> test fails on amd gpu
   auto map =
-      clue::internal::make_associator(queue, std::span<const int32_t>(associations.data(), size), size);
+      clue::internal::make_associator(std::span<const int32_t>(associations.data(), size), size);
   SUBCASE("Test count throwing conditions") {
     CHECK_THROWS(map.count(-1));
     CHECK_THROWS(map.count(2));
@@ -98,7 +100,7 @@ TEST_CASE("Test throwing conditions") {
   }
 
   const auto const_map =
-      clue::internal::make_associator(queue, std::span<const int32_t>(associations.data(), size), size);
+      clue::internal::make_associator(std::span<const int32_t>(associations.data(), size), size);
   SUBCASE("Test lower_bound throwing conditions") {
     CHECK_THROWS(map.lower_bound(-1));
     CHECK_THROWS(map.lower_bound(2));

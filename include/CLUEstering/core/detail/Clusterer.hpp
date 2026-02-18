@@ -18,11 +18,11 @@
 #include <stdexcept>
 
 namespace clue {
-  template <concepts::Queue TQueue, std::size_t size>
+  template <concepts::Queue TQueue, std::size_t Ndim>
   class Clusterer;
   template <concepts::Queue TQueue, std::size_t Ndim>
   Clusterer<TQueue, Ndim>::Clusterer(
-      float dc, float rhoc, std::optional<float> dm, std::optional<float> seed_dc, int pPBin)
+      TQueue& /*queue*/,Dim<Ndim> /** unused **/,float dc, float rhoc, std::optional<float> dm, std::optional<float> seed_dc, int pPBin)
       : m_dc{dc},
         m_seed_dc{seed_dc.value_or(dc)},
         m_rhoc{rhoc},
@@ -34,15 +34,6 @@ namespace clue {
           "Invalid clustering parameters. The parameters must be positive.");
     }
   }
-
-  template <concepts::Queue TQueue, std::size_t Ndim>
-  Clusterer<TQueue, Ndim>::Clusterer(TQueue& /*queue*/,
-                                     float dc,
-                                     float rhoc,
-                                     std::optional<float> dm,
-                                     std::optional<float> seed_dc,
-                                     int pPBin)
-      : Clusterer(dc, rhoc, dm, seed_dc, pPBin) {}
 
   template <concepts::Queue TQueue, std::size_t Ndim>
   void Clusterer<TQueue, Ndim>::setParameters(
@@ -68,7 +59,7 @@ namespace clue {
                    std::size_t block_size){
     auto device=DevicePool::deviceAt(0U); //get the first device
     auto queue=get_queue(device);
-    auto d_points = PointsDevice<Ndim,ALPAKA_TYPEOF(device)>{device, h_points.size()};
+    auto d_points = PointsDevice{device,::clue::Dim<Ndim>{}, h_points.size()};
 
     setup(queue, h_points, d_points);
     make_clusters_impl(h_points, d_points, metric, kernel, queue, block_size);
@@ -83,7 +74,7 @@ namespace clue {
                                                      const Kernel& kernel,
                                                      std::size_t block_size) {
     auto device=queue.getDevice();
-    auto d_points = PointsDevice<Ndim,ALPAKA_TYPEOF(device)>{device, h_points.size()};
+    auto d_points = PointsDevice{device,::clue::Dim<Ndim>{}, h_points.size()};
 
     setup(queue, h_points, d_points);
     make_clusters_impl(h_points, d_points, metric, kernel, queue, block_size);

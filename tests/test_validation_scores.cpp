@@ -9,8 +9,9 @@ DOCTEST_TEST_CASE_TEMPLATE("Test validation scores on toy detector dataset",Api,
   auto queue = clue::get_queue(0u);
 
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/toyDetector_1000.csv";
-  clue::PointsHost<2> points = clue::read_csv<2>(test_file_path);
-  clue::Clusterer<ALPAKA_TYPEOF(queue),2> clusterer(queue, 4.f, 2.5f, 4.f);
+  auto dim=clue::Dim<2>{};
+  clue::PointsHost points = read_csv(dim,test_file_path);
+  clue::Clusterer clusterer(queue,dim, 4.f, 2.5f, 4.f);
   clusterer.make_clusters(queue, points);
 
   SUBCASE("Test computation of silhouette score on all points singularly") {

@@ -32,7 +32,7 @@ namespace clue {
       }
 
       template <uint8_t Ndim>
-      void generateClusterData(clue::PointsHost<Ndim>& points,
+      void generateClusterData(PointsHost<Ndim>& points,
                                const ClusterCenters<Ndim>& cluster_centers,
                                size_t n_clusters,
                                size_t cluster_size,
@@ -50,7 +50,7 @@ namespace clue {
       }
 
       template <uint8_t Ndim>
-      void generateNoiseData(clue::PointsHost<Ndim>& points,
+      void generateNoiseData(PointsHost<Ndim>& points,
                              size_t data_size,
                              size_t noise_size,
                              std::uniform_real_distribution<float> uniform_dist,
@@ -66,7 +66,7 @@ namespace clue {
     }  // namespace detail
 
     template <uint8_t Ndim>
-    void generateRandomData(clue::PointsHost<Ndim>& points,
+    void generateRandomData(PointsHost<Ndim>& points,
                             size_t n_clusters,
                             std::pair<float, float> space_boundaries,
                             float stddev,

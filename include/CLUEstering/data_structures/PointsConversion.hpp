@@ -22,7 +22,7 @@ namespace clue {
   template <concepts::Queue TQueue, std::size_t Ndim>
   void copyToHost(TQueue& queue,
                   PointsHost<Ndim>& h_points,
-                  const PointsDevice<Ndim, DevType<TQueue>>& d_points);
+                  const PointsDevice< DevType<TQueue>,Ndim>& d_points);
 
   /// @brief Copies the results of the clustering from the device points to
   /// the host points
@@ -32,7 +32,7 @@ namespace clue {
   /// @param queue The queue used for the device operations
   /// @param d_points The points allocated on the device, where the clustering has been run
   template <concepts::Queue TQueue, std::size_t Ndim>
-  auto copyToHost(TQueue& queue, const PointsDevice<Ndim, DevType<TQueue>>& d_points);
+  auto copyToHost(TQueue& queue, const PointsDevice<DevType<TQueue>,Ndim>& d_points);
 
   /// @brief Copies the coordinates and weights of the points from the host to the device
   ///
@@ -44,7 +44,7 @@ namespace clue {
   /// and weights
   template <concepts::Queue TQueue, std::size_t Ndim>
   void copyToDevice(TQueue& queue,
-                    PointsDevice<Ndim, DevType<TQueue>>& d_points,
+                    PointsDevice<DevType<TQueue>,Ndim>& d_points,
                     const PointsHost<Ndim>& h_points);
 
   /// @brief Copies the coordinates and weights of the points from the host to the device

@@ -25,7 +25,7 @@ namespace clue {
     ALPAKA_FN_HOST void reset(int32_t npoints) { m_assoc.reset(npoints, npoints); }
 
     template <concepts::Queue TQueue, std::size_t Ndim>
-    ALPAKA_FN_HOST void fill(TQueue& queue, const PointsDevice<Ndim, TDev>& d_points) {
+    ALPAKA_FN_HOST void fill(TQueue& queue, const PointsDevice<TDev,Ndim>& d_points) {
       m_assoc.fill(queue, d_points.size(), d_points.nearestHigher());
     }
 
