@@ -5,16 +5,18 @@ Test that the equality operator for clusterer objects works correctly
 import sys
 import pandas as pd
 import pytest
+import numpy as np
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
-
-
+from CLUEstering import canonicalize
 @pytest.fixture
 def sissa():
     '''
     Returns the dataframe containing the sissa ataset
     '''
     return pd.read_csv("../data/sissa_1000.csv")
+
+
 
 
 @pytest.fixture
@@ -34,7 +36,7 @@ def test_clusterer_equality(sissa, toy_det, backend):
     clust1.read_data(sissa)
     clust1.run_clue(backend=backend)
 
-    # Create a copy of the sissa lusterer to check the equality of clusterers
+    # Create a copy of the sissa clusterer to check the equality of clusterers
     clust1_copy = clue.clusterer(20., 10., 20.)
     clust1_copy.read_data(sissa)
     clust1_copy.run_clue(backend=backend)
@@ -48,10 +50,11 @@ def test_clusterer_equality(sissa, toy_det, backend):
     clust2_copy = clue.clusterer(5., 2.5, 5.)
     clust2_copy.read_data(toy_det)
     clust2_copy.run_clue(backend=backend)
-
     # Check equality
-    assert clust1.clust_prop == clust1_copy.clust_prop
-    assert clust2.clust_prop == clust2_copy.clust_prop
-
+    assert np.array_equal(canonicalize(clust1.cluster_ids),
+                          canonicalize(clust1_copy.cluster_ids))
+    assert np.array_equal(canonicalize(clust2.cluster_ids),
+                          canonicalize(clust2_copy.cluster_ids))
     # Check inequality
-    assert clust1.clust_prop != clust2.clust_prop
+    assert not np.array_equal(canonicalize(clust1.cluster_ids),
+                          canonicalize(clust2_copy.cluster_ids))

@@ -7,7 +7,7 @@ dist/
 build/
 # Shared library files
 *.so
-
+personalFolder/
 # Profiling files
 *out*
 vgcore.*

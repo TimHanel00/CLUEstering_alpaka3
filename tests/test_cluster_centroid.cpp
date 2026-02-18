@@ -5,10 +5,6 @@
 #include <ranges>
 #include <span>
 #include <vector>
-
-#include <fmt/core.h>
-#include <fmt/format.h>
-
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 

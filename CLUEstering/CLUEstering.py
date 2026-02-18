@@ -21,29 +21,62 @@ sys.path.insert(1, join(path, 'lib'))
 import CLUE_Convolutional_Kernels as clue_kernels
 import argparse
 backends = []
-cpu_serial_found = exists(str(*glob(join(path, 'lib/CLUE_CPU_Serial*.so'))))
+
+# CPU Serial
+matches = glob(join(path, "lib", "CLUE_CPU_Serial*.so"))
+cpu_serial_found = bool(matches) and exists(matches[0])
 if cpu_serial_found:
     import CLUE_CPU_Serial as cpu_serial
     backends.append("cpu serial")
-tbb_found = exists(str(*glob(join(path, 'lib/CLUE_CPU_TBB*.so'))))
+
+# CPU TBB
+matches = glob(join(path, "lib", "CLUE_CPU_TBB*.so"))
+tbb_found = bool(matches) and exists(matches[0])
 if tbb_found:
     import CLUE_CPU_TBB as cpu_tbb
     backends.append("cpu tbb")
-omp_found = exists(str(*glob(join(path, 'lib/CLUE_CPU_OMP*.so'))))
+
+# CPU OpenMP
+matches = glob(join(path, "lib", "CLUE_CPU_OMP*.so"))
+omp_found = bool(matches) and exists(matches[0])
 if omp_found:
     import CLUE_CPU_OMP as cpu_omp
     backends.append("cpu openmp")
-cuda_found = exists(str(*glob(join(path, 'lib/CLUE_GPU_CUDA*.so'))))
+
+# GPU CUDA
+matches = glob(join(path, "lib", "CLUE_GPU_CUDA*.so"))
+cuda_found = bool(matches) and exists(matches[0])
 if cuda_found:
     import CLUE_GPU_CUDA as gpu_cuda
     backends.append("gpu cuda")
-hip_found = exists(str(*glob(join(path, 'lib/CLUE_GPU_HIP*.so'))))
+
+# GPU HIP
+matches = glob(join(path, "lib", "CLUE_GPU_HIP*.so"))
+hip_found = bool(matches) and exists(matches[0])
 if hip_found:
     import CLUE_GPU_HIP as gpu_hip
     backends.append("gpu hip")
-
 def all_backends():
     return backends
+""" The Alpaka3 port currently makes cluster labels dependent on execution order.
+    This function can be utilized to still
+    perform a valid correctness check of the clustering results.
+"""
+def canonicalize(labels, outlier=-1):
+    labels = np.asarray(labels)
+    new = labels.copy()
+    mapping = {}
+    next_id = 0
+    for i, c in enumerate(labels):
+        if c == outlier:
+            continue
+        if c not in mapping:
+            mapping[c] = next_id
+            next_id += 1
+        new[i] = mapping[c]
+    return new
+
+
 def clue_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run CLUE clustering on an input dataset.",
@@ -543,7 +576,8 @@ class clusterer:
         :returns: None
         """
         if backend == "all":
-            cpu_serial.listDevices('cpu serial')
+            if cpu_serial_found:
+                cpu_serial.listDevices('cpu serial')
             if tbb_found:
                 cpu_tbb.listDevices('cpu tbb')
             if omp_found:
@@ -553,7 +587,10 @@ class clusterer:
             if hip_found:
                 gpu_hip.listDevices('gpu hip')
         elif backend == "cpu serial":
-            cpu_serial.listDevices(backend)
+            if cpu_serial_found:
+                cpu_serial.listDevices(backend)
+            else:
+                print("CPU Serial not found. Please re-compile the library and try again.")
         elif backend == "cpu tbb":
             if tbb_found:
                 cpu_tbb.listDevices(backend)
@@ -629,10 +666,13 @@ class clusterer:
 
         start = time.time_ns()
         if backend == "cpu serial":
-            cluster_id_is_seed = cpu_serial.mainRun(self._dc, self._rhoc, self._dm, self._seed_dc,
+            if cpu_serial_found:
+                cluster_id_is_seed = cpu_serial.mainRun(self._dc, self._rhoc, self._dm, self._seed_dc,
                                                     self._ppbin, self.wrapped, data.coords, data.results,
                                                     self._kernel, data.n_dim,
                                                     data.n_points, block_size, device_id)
+            else:
+                print("CPU Serial not found. Please re-compile the library and try again.")
         elif backend == "cpu tbb":
             if tbb_found:
                 cluster_id_is_seed = cpu_tbb.mainRun(self._dc, self._rhoc, self._dm, self._seed_dc,

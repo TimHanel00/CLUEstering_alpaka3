@@ -11,7 +11,6 @@
 
 TEST_CASE("Test clue::get_device utility") {
   clue::Device device = clue::DevicePool::deviceAt(0u);
-
   static_assert(std::is_same_v<decltype(device), clue::Device>, "Expected type clue::Device");
   CHECK(clue::DevicePool::devices()[0u] == device);
 }
@@ -58,7 +57,6 @@ TEST_CASE("Test clue::get_queue utility") {
 TEST_CASE("Test get_clusters host function") {
   auto device = clue::DevicePool::deviceAt(0u);
   auto queue=device.makeQueue();
-
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/data_32768.csv";
   clue::PointsHost<2> h_points = clue::read_csv<2>(test_file_path);
   const auto n_points = h_points.size();
@@ -67,13 +65,12 @@ TEST_CASE("Test get_clusters host function") {
   const float dc{1.5f}, rhoc{10.f}, outlier{1.5f};
   clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
   algo.make_clusters(queue, h_points, d_points);
-  auto clusters = clue::get_clusters(h_points);
+  auto clusters = get_clusters(h_points);
 }
 
 TEST_CASE("Test get_clusters device function") {
   auto device = clue::DevicePool::deviceAt(0u);
   auto queue=device.makeQueue();
-
   const auto test_file_path = std::string(TEST_DATA_DIR) + "/data_32768.csv";
   clue::PointsHost<2> h_points = clue::read_csv<2>(test_file_path);
   const auto n_points = h_points.size();

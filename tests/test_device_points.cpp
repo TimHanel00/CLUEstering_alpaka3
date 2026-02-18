@@ -179,33 +179,30 @@ TEST_CASE("Test device points with external allocation passing four buffers as p
       d_points,
       size));
 }
-///This test is errornous
-// TEST_CASE("Test extrema functions on device points column") {
-//
-//   auto device = clue::DevicePool::deviceAt(0U);
-//   auto queue=clue::get_queue(device); // gets a static queue (no lifetime issue) that will also be used internally
-//
-//   const uint32_t size = 1000;
-//   std::vector<float> data(size);
-//   std::iota(data.begin(), data.end(), 0.0f);
-//   auto hostQueue=clue::DevicePool::getHost().makeQueue();
-//   clue::PointsHost<2> h_points(1000);
-//   alpaka::onHost::memcpy(hostQueue,h_points.coords(0),data);
-//   std::ranges::copy(data, h_points.coords(0).begin());
-//   std::ranges::copy(data, h_points.weights().begin());
-//
-//   clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, size);
-//   clue::copyToDevice(queue, d_points, h_points);
-//   alpaka::onHost::wait(queue);
-//
-//   auto max_it =
-//       clue::internal::algorithm::max_element(d_points.weights().begin(), d_points.weights().end());
-//   auto max = 0.f;
-//   alpaka::onHost::memcpy(
-//       queue, makeView(alpaka::api::host,&max,clue::Vec1D{1u}), alpaka::makeView(alpaka::getApi(queue),&(*max_it), clue::Vec1D{1u}));
-//   alpaka::onHost::wait(queue);
-//   CHECK(max == static_cast<float>(size - 1));
-// }
+TEST_CASE("Test extrema functions on device points column") {
+
+  auto device = clue::DevicePool::deviceAt(0U);
+  auto queue=clue::get_queue(device); // gets a static queue (no lifetime issue) that will also be used internally
+
+  const uint32_t size = 1000;
+  std::vector<float> data(size);
+  std::iota(data.begin(), data.end(), 0.0F);
+  clue::PointsHost<2> h_points(1000);
+  std::ranges::copy(data, h_points.coords(0).begin());
+  std::ranges::copy(data, h_points.weights().begin());
+
+  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, size);
+  clue::copyToDevice(queue, d_points, h_points);
+  alpaka::onHost::wait(queue);
+
+  auto max_it =
+      clue::internal::algorithm::max_element(queue,d_points.weights().begin(), d_points.weights().end());
+  auto max = 0.f;
+  alpaka::onHost::memcpy(
+      queue, makeView(alpaka::api::host,&max,clue::Vec1D{1U}), alpaka::makeView(queue,std::to_address(max_it), clue::Vec1D{1U}));
+  alpaka::onHost::wait(queue);
+  CHECK(max == static_cast<float>(size - 1));
+}
 
 TEST_CASE("Test reduction of device points column") {
   auto device = clue::DevicePool::deviceAt(0u);
@@ -223,7 +220,7 @@ TEST_CASE("Test reduction of device points column") {
   clue::copyToDevice(queue, d_points, h_points);
   alpaka::onHost::wait(queue);
 
-  CHECK(clue::internal::algorithm::reduce(d_points.weights().begin(), d_points.weights().end()) ==
+  CHECK(clue::internal::algorithm::reduce(queue,d_points.weights().begin(), d_points.weights().end()) ==
         499500.0f);
 }
 

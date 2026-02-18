@@ -5,8 +5,6 @@
 #include <numbers>
 #include <ranges>
 
-#include <fmt/core.h>
-
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
@@ -18,17 +16,19 @@ TEST_CASE("Test clustering on benchmarking datasets") {
 #endif
 
   auto device = clue::DevicePool::deviceAt(0u);
-  auto queue=device.makeQueue();
+  auto queue = device.makeQueue();
 
   const float dc{1.5f}, rhoc{10.f}, outlier{1.5f};
-  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer<ALPAKA_TYPEOF(queue), 2> algo(queue, dc, rhoc, outlier);
 
   for (auto i = range.first; i < range.second; ++i) {
+    const auto n = static_cast<std::size_t>(std::pow(2.0, i)); // or (1u << i) since i is int
     const auto test_file_path =
-        std::string(TEST_DATA_DIR) + fmt::format("/data_{}.csv", std::pow(2, i));
-    clue::PointsHost<2> h_points = clue::read_csv<2>( test_file_path);
+        std::string(TEST_DATA_DIR) + "/data_" + std::to_string(n) + ".csv";
+
+    clue::PointsHost<2> h_points = clue::read_csv<2>(test_file_path);
     const auto n_points = h_points.size();
-    clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, n_points);
+    clue::PointsDevice<2, ALPAKA_TYPEOF(device)> d_points(device, n_points);
 
     algo.make_clusters(queue, h_points, d_points);
 

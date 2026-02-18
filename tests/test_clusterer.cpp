@@ -25,7 +25,7 @@ TEST_CASE("Test make_cluster interfaces") {
   SUBCASE("Run clustering without passing device points") {
     algo.make_clusters(queue, h_points);
 
-    CHECK(clue::silhouette(h_points) >= 0.9f);
+    CHECK((clue::silhouette(h_points) >= 0.9F));
   }
 
   SUBCASE("Run clustering without passing the queue and device points") {

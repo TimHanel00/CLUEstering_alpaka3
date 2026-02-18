@@ -8,7 +8,7 @@ import sys
 import pandas as pd
 import pytest
 
-from CLUEstering.CLUEstering import all_backends
+from CLUEstering import all_backends
 from check_result import check_result
 from sklearn.metrics import silhouette_score
 sys.path.insert(1, '../CLUEstering/')

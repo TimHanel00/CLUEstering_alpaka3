@@ -7,9 +7,11 @@ import sys
 import pandas as pd
 import pytest
 from sklearn.metrics import silhouette_score
+
+
+
 sys.path.insert(1, '../CLUEstering/')
 import CLUEstering as clue
-
 
 @pytest.fixture
 def sissa_1000():
@@ -27,7 +29,7 @@ def sissa_4000():
     return pd.read_csv("../data/sissa_4000.csv")
 
 
-def test_sissa_1000(sissa_1000):
+def test_sissa_1000(sissa_1000,backend):
     '''
     Checks that the output of the clustering is the one given by the
     truth dataset.
@@ -36,13 +38,13 @@ def test_sissa_1000(sissa_1000):
     c = clue.clusterer(20., 10., 20.)
     c.read_data(sissa_1000)
     assert c.n_dim == 2
-    c.run_clue()
+    c.run_clue(backend=backend)
 
     mask = c.cluster_ids != -1
     assert silhouette_score(c.coords.T[mask], c.cluster_ids[mask]) > 0.5
 
 
-def test_sissa_4000(sissa_4000):
+def test_sissa_4000(sissa_4000,backend):
     '''
     Checks that the output of the clustering is the one given by the
     truth dataset.
@@ -51,7 +53,7 @@ def test_sissa_4000(sissa_4000):
     c = clue.clusterer(20., 10., 20.)
     c.read_data(sissa_4000)
     assert c.n_dim == 2
-    c.run_clue()
+    c.run_clue(backend=backend)
 
     mask = c.cluster_ids != -1
     assert silhouette_score(c.coords.T[mask], c.cluster_ids[mask]) > 0.45
@@ -60,10 +62,10 @@ def test_sissa_4000(sissa_4000):
 if __name__ == "__main__":
     c = clue.clusterer(20., 10., 20.)
     c.read_data("../data/sissa_1000.csv")
-    c.run_clue()
+    c.run_clue(backend=all_backends()[0])
     c.cluster_plotter()
 
     c = clue.clusterer(20., 10., 20.)
     c.read_data("../data/sissa_4000.csv")
-    c.run_clue()
+    c.run_clue(backend=all_backends()[0])
     c.cluster_plotter()
