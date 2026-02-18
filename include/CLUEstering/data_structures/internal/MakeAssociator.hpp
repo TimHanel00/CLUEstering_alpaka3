@@ -15,6 +15,9 @@ namespace clue::internal {
                               std::span<const T_Elem> associations,
                               T_Elem elements) {
     if (elements == 0 || associations.empty()) {
+      alpaka::onHost::wait(queue);
+      std::cerr << "make_associator: throwing early (elements=" << elements
+                  << ", size=" << associations.size() << ")\n";
       throw std::invalid_argument("make_associator: elements and associations must be non-zero");
     }
     auto it_max=algorithm::max_element(queue,associations.begin(),associations.end());

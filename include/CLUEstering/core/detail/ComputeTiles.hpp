@@ -30,7 +30,7 @@ namespace clue::detail {
   void compute_tile_size(TQueue & queue,
                          internal::CoordinateExtremes<Ndim>* min_max,
                          alpaka::concepts::IMdSpan auto tile_sizes,
-                         const PointsDevice<Ndim, TDev>& dev_points,
+                         const PointsDevice<TDev,Ndim>& dev_points,
                          uint32_t nPerDim) {
     for (size_t dim{}; dim != Ndim; ++dim) {
       auto coords = dev_points.coords(dim);

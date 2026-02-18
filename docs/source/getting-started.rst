@@ -18,11 +18,13 @@ Below is a simple C++ code snippet, which can also be found, along with the CMak
         auto device = queue.getDevice();
         // Allocate the points on the host and device.
         clue::PointsHost<2> h_points = clue::read_csv<2>("path-to-data.csv");
-        clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, h_points.size());
+        // specify the dimension for type deduction
+        auto dim=clue::Dim<std::size_t,2>;
+        clue::PointsDevice d_points(device, dim, h_points.size());
     
         // Define the parameters for the clustering and construct the clusterer.
         const float dc = 20.f, rhoc = 10.f, outlier = 20.f;
-        clue::Clusterer<2> algo(queue, dc, rhoc, outlier);
+        clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
     
         // Launch the clustering
         // The results will be stored in the `clue::PointsHost` object

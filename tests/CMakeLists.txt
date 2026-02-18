@@ -22,6 +22,7 @@ foreach(source IN LISTS sources)
   target_include_directories("${test_name}" PRIVATE
           "${doctest_SOURCE_DIR}/doctest"
   )
+
 #  target_link_libraries("${test_name}" PRIVATE
 #          fmt::fmt
 #  )
@@ -29,6 +30,11 @@ foreach(source IN LISTS sources)
           CLUEstering::CLUEstering
   )
   alpaka_finalize(${test_name})
+  if(alpaka_DEP_HIP)
+    find_package(rocthrust REQUIRED CONFIG)
+
+    target_link_libraries(${test_name} PRIVATE roc::rocthrust)
+  endif()
   target_compile_definitions("${test_name}" PRIVATE
           CLUE_ENABLE_CACHING_ALLOCATOR
           TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../data"

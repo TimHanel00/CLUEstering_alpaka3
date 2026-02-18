@@ -11,8 +11,12 @@
 #include <string>
 
 namespace clue {
+  /// @brief Reads data from an input file
+  ///
+  /// @param dim The dimension of the points input
+  /// @param file_path
   template <std::size_t NDim>
-  inline PointsHost<NDim> read_csv(const std::string& file_path) {
+  inline PointsHost<NDim> read_csv(const Dim<NDim> dim,const std::string& file_path) {
     std::fstream file(file_path);
     if (!file.is_open()) {
       throw std::runtime_error("Could not open file: " + file_path);
@@ -22,7 +26,7 @@ namespace clue {
         std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n') -
         1;
 
-    PointsHost<NDim> points(n_points);
+    PointsHost points(dim,n_points);
 
     file = std::fstream(file_path);
     std::string buffer;
@@ -43,8 +47,12 @@ namespace clue {
     }
     return points;
   }
+  /// @brief Writes data from to an output file
+  ///
+  /// @param dim The dimension of the written points
+  /// @param file_path
   template <std::size_t NDim>
-  inline PointsHost<NDim> read_output(const std::string& file_path) {
+  inline PointsHost<NDim> read_output(Dim<NDim> /** unused **/, const std::string& file_path) {
     std::fstream file(file_path);
     if (!file.is_open()) {
       throw std::runtime_error("Could not open file: " + file_path);

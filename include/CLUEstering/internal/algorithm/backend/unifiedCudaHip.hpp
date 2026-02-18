@@ -7,9 +7,10 @@
 #if (ALPAKA_LANG_CUDA && (ALPAKA_COMP_CLANG_CUDA || ALPAKA_COMP_NVCC))
   #define CUDA_ENABLED
 #endif
-#if (defined(__HIP_DEVICE_COMPILE__) && __HIP_DEVICE_COMPILE__ == 1)
+#if ALPAKA_LANG_HIP
   #define HIP_ENABLED
 #endif
+
 // Enable CUDA specialization only when compiling with a CUDA toolchain.
 // (Do NOT gate on __CUDA_ARCH__ here: Thrust calls are typically host code launching kernels.)
 #if defined(CUDA_ENABLED) || defined(HIP_ENABLED)
@@ -19,9 +20,6 @@
   #include <thrust/extrema.h>
   #include <thrust/reduce.h>
   #include <thrust/sort.h>
-#if defined(HIP_ENABLED)
-  #include <thrust/hip/execution_policy.h>
-#endif
 namespace clue::internal::algorithm {
   template <typename Api>
   struct ThrustDefaultPolicy;

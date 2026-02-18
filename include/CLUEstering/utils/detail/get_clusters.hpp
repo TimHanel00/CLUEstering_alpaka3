@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include "CLUEstering/data_structures/PointsHost.hpp"
 #include "CLUEstering/data_structures/PointsDevice.hpp"
 #include "CLUEstering/data_structures/internal/MakeAssociator.hpp"
 #include "CLUEstering/detail/concepts.hpp"
@@ -41,7 +40,7 @@ namespace clue {
   }
 
   template <concepts::Queue TQueue, std::size_t Ndim>
-  inline auto get_clusters(TQueue& queue, const PointsDevice<Ndim, DevType<TQueue>>& points) {
+  inline auto get_clusters(TQueue& queue, const PointsDevice<DevType<TQueue>,Ndim>& points) {
     assert(points.clustered());
     return detail::get_clusters(queue, points.clusterIndexes());
   }

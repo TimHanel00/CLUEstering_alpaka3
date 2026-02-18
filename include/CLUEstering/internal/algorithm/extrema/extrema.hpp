@@ -94,7 +94,8 @@ namespace clue::internal::algorithm {
         first,
         last);
   }
-
+  template<typename T>
+  struct Dummy;
   template <typename ForwardIterator>
   ALPAKA_FN_HOST inline constexpr auto max_element(
       auto&& anyWithApi,
@@ -103,7 +104,6 @@ namespace clue::internal::algorithm {
   {
     using Api = ALPAKA_TYPEOF(alpaka::getApi(anyWithApi));
       using Tag = typename AlgoDispatchTag<Api>::type;
-
     return AlgorithmDispatch::Op<Tag>{}.max_element(
         Api{},
         first,

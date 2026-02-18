@@ -29,13 +29,13 @@ struct KernelCompareDevicePoints {
   }
 };
 
-template <clue::concepts::Queue T_Queue,std::ranges::range TRange, std::size_t Ndim,typename T_Dev>
+template <clue::concepts::Queue T_Queue,std::ranges::range TRange, typename T_Dev,std::size_t Ndim>
 ALPAKA_FN_HOST bool compareDevicePoints(T_Queue &queue,
                                         TRange&& h_coords,
                                         TRange&& h_weights,
-                                        clue::PointsDevice<Ndim,T_Dev>& d_points,
+                                        clue::PointsDevice<T_Dev,Ndim>& d_points,
                                         uint32_t size) {
-  auto h_points = clue::PointsHost<Ndim>(size);
+  auto h_points = clue::PointsHost(clue::Dim<Ndim>{},size);
   std::ranges::copy(h_coords, h_points.coords(0).begin());
   std::ranges::copy(h_weights, h_points.weights().begin());
   clue::copyToDevice(queue, d_points, h_points);
@@ -69,7 +69,7 @@ TEST_CASE("Test device points with internal allocation") {
   auto queue=clue::get_queue(device);
 
   const uint32_t size = 1000;
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, size);
+  clue::PointsDevice d_points(device,clue::Dim<2>{}, size);
 
   auto to_float = [](int i) -> float { return static_cast<float>(i); };
   CHECK(compareDevicePoints(
@@ -85,10 +85,10 @@ TEST_CASE("Test device points with external allocation of whole buffer") {
   auto queue=clue::get_queue(device);
 
   const uint32_t size = 1000;
-  const auto bytes = clue::soa::device::computeSoASize<2>(size);
+  clue::Dim<2> dim{};
+  const auto bytes = clue::soa::device::computeSoASize(dim,size);
   auto buffer = clue::make_device_buffer<std::byte>(queue, std::size_t{bytes});
-
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, size, std::span(buffer.data(), bytes));
+  clue::PointsDevice d_points(device,::clue::Dim<2>{}, size,std::span(buffer.data(), bytes));
 
   auto to_float = [](int i) -> float { return static_cast<float>(i); };
   CHECK(compareDevicePoints(
@@ -107,9 +107,7 @@ TEST_CASE("Test device points with external allocation passing the two buffers a
   const uint32_t size = 1000;
   auto input = clue::make_device_buffer<float>(queue, 3 * size);
   auto output = clue::make_device_buffer<int>(queue, 2 * size);
-
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(
-      device, size, std::span{input.data(), 3 * size}, std::span{output.data(), 2 * size});
+  clue::PointsDevice d_points(device,clue::Dim<2>{}, size,std::span{input.data(), 3 * size}, std::span{output.data(), 2 * size});
   auto to_float = [](int i) -> float { return static_cast<float>(i); };
   CHECK(compareDevicePoints(
       queue,
@@ -128,7 +126,7 @@ TEST_CASE("Test device points with external allocation passing the two buffers a
   auto input = clue::make_device_buffer<float>(queue, 3 * size);
   auto output = clue::make_device_buffer<int>(queue, 2 * size);
 
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, size, input.data(), output.data());
+  clue::PointsDevice d_points(device,clue::Dim<2>{}, size, input.data(), output.data());
   auto to_float = [](int i) -> float { return static_cast<float>(i); };
   CHECK(compareDevicePoints(
       queue,
@@ -147,8 +145,7 @@ TEST_CASE("Test device points with external allocation passing four buffers as s
   auto weights = clue::make_device_buffer<float>(queue, uint32_t{size});
   auto cluster_ids = clue::make_device_buffer<int>(queue, uint32_t{size});
 
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device,
-                                 size,
+  clue::PointsDevice d_points(device,clue::Dim<2>{}, size,
                                  std::span{coords.data(), 2 * size},
                                  std::span{weights.data(), size},
                                  std::span{cluster_ids.data(), size});
@@ -170,7 +167,7 @@ TEST_CASE("Test device points with external allocation passing four buffers as p
   auto weights = clue::make_device_buffer<float>(queue, uint32_t{size});
   auto cluster_ids = clue::make_device_buffer<int>(queue, uint32_t{size});
 
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, size, coords.data(), weights.data(), cluster_ids.data());
+  clue::PointsDevice d_points{device,clue::Dim<2>{}, size, coords.data(), weights.data(), cluster_ids.data()};
   auto to_float = [](int i) -> float { return static_cast<float>(i); };
   CHECK(compareDevicePoints(
       queue,
@@ -187,11 +184,12 @@ TEST_CASE("Test extrema functions on device points column") {
   const uint32_t size = 1000;
   std::vector<float> data(size);
   std::iota(data.begin(), data.end(), 0.0F);
-  clue::PointsHost<2> h_points(1000);
+  clue::Dim<2> dim{};
+  clue::PointsHost h_points(dim,1000);
   std::ranges::copy(data, h_points.coords(0).begin());
   std::ranges::copy(data, h_points.weights().begin());
 
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, size);
+  clue::PointsDevice d_points(device,dim, size);
   clue::copyToDevice(queue, d_points, h_points);
   alpaka::onHost::wait(queue);
 
@@ -211,12 +209,11 @@ TEST_CASE("Test reduction of device points column") {
   const uint32_t size = 1000;
   std::vector<float> data(size);
   std::iota(data.begin(), data.end(), 0.0f);
-
-  clue::PointsHost<2> h_points(1000);
+  clue::Dim<2> dim{};
+  clue::PointsHost h_points(dim,1000);
   std::ranges::copy(data, h_points.coords(0).begin());
   std::ranges::copy(data, h_points.weights().begin());
-
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, size);
+  clue::PointsDevice d_points(device,dim, size);
   clue::copyToDevice(queue, d_points, h_points);
   alpaka::onHost::wait(queue);
 
@@ -227,14 +224,17 @@ TEST_CASE("Test reduction of device points column") {
 TEST_CASE("Test constructor throwing conditions") {
   auto queue = clue::get_queue(0u);
   auto device=queue.getDevice();
-  CHECK_THROWS(clue::PointsDevice<2,ALPAKA_TYPEOF(device)>(device, 0));
-  CHECK_THROWS(clue::PointsDevice<2,ALPAKA_TYPEOF(device)>(device, -5));
+  auto dim=::clue::Dim<2>{};
+
+  CHECK_THROWS(clue::PointsDevice{device,dim, 0});
+  CHECK_THROWS(clue::PointsDevice{device,dim, -5});
 }
 
 TEST_CASE("Test coordinate getter throwing conditions") {
   SUBCASE("Const points") {
     const uint32_t size = 1000;
-    clue::PointsHost<2> points(size);
+    clue::Dim<2> dim{};
+    clue::PointsHost points(dim,size);
     CHECK_THROWS(points.coords(3));
     CHECK_THROWS(points.coords(10));
   }
@@ -242,7 +242,8 @@ TEST_CASE("Test coordinate getter throwing conditions") {
     const uint32_t size = 1000;
     auto queue = clue::get_queue(0u);
     auto device=queue.getDevice();
-    const clue::PointsDevice<2,ALPAKA_TYPEOF(device)> points(device, size);
+    auto dim=clue::Dim<2>{};
+    const clue::PointsDevice points(device,dim, size);
     CHECK_THROWS(points.coords(3));
     CHECK_THROWS(points.coords(10));
   }
@@ -251,12 +252,12 @@ TEST_CASE("Test coordinate getter throwing conditions") {
 TEST_CASE("Test n_cluster getter") {
   auto queue = clue::get_queue(0u);
   auto device=queue.getDevice();
-
-  clue::PointsHost<2> h_points = clue::read_csv<2>(std::string(TEST_DATA_DIR) + "/data_32768.csv");
-  clue::PointsDevice<2,ALPAKA_TYPEOF(device)> d_points(device, h_points.size());
+  clue::Dim<2> dim{};
+  clue::PointsHost h_points = clue::read_csv(dim, std::string(TEST_DATA_DIR) + "/data_32768.csv");
+  clue::PointsDevice d_points(device,dim, h_points.size());
 
   const float dc{1.3f}, rhoc{10.f}, outlier{1.3f};
-  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer algo(queue, dim, dc, rhoc, outlier);
   algo.make_clusters(queue, h_points, d_points);
 
   SUBCASE("Check the number of clusters") {

@@ -22,7 +22,7 @@ namespace clue {
   namespace soa::device {
 
     template <std::size_t Ndim>
-    inline auto computeSoASize(int32_t n_points) {
+    inline auto computeSoASize(Dim<Ndim>/**unused **/,int32_t n_points) {
       if (n_points <= 0) {
         throw std::invalid_argument(
             "Number of points passed to PointsDevice constructor must be positive.");
@@ -32,11 +32,11 @@ namespace clue {
     template <concepts::Queue TQueue, std::size_t Ndim>
     void copyToHost(TQueue& queue,
                     PointsHost<Ndim>& h_points,
-                    const PointsDevice<Ndim, DevType<TQueue>>& d_points);
+                    const PointsDevice<DevType<TQueue>,Ndim>& d_points);
 
     template <concepts::Queue TQueue, std::size_t Ndim>
     void copyToDevice(TQueue& queue,
-                      PointsDevice<Ndim, DevType<TQueue>>& d_points,
+                      PointsDevice<DevType<TQueue>,Ndim>& d_points,
                       const PointsHost<Ndim>& h_points);
     template <std::size_t Ndim>
     inline void partitionSoAView(PointsView<Ndim>& view, std::byte* buffer, int32_t n_points) {
@@ -149,18 +149,18 @@ namespace clue {
 
   }  // namespace soa::device
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device, int32_t n_points)
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  inline PointsDevice<TDev,Ndim>::PointsDevice(TDev& device,Dim<Ndim> dim, int32_t n_points)
       : m_buffer{make_device_buffer<std::byte>(device,
-                                               soa::device::computeSoASize<Ndim>(n_points))},
+                                               soa::device::computeSoASize(dim,n_points))},
         m_device(device),
         m_view{},
         m_size{n_points} {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points);
   }
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  inline PointsDevice<TDev,Ndim>::PointsDevice(TDev& device, Dim<Ndim> dim,
                                                 int32_t n_points,
                                                 std::span<std::byte> buffer)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
@@ -170,8 +170,8 @@ namespace clue {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), buffer.data(), n_points);
   }
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  inline PointsDevice<TDev,Ndim>::PointsDevice(TDev& device, Dim<Ndim> dim,
                                                 int32_t n_points,
                                                 std::span<float> input,
                                                 std::span<int> output)
@@ -182,8 +182,8 @@ namespace clue {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, input, output);
   }
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  inline PointsDevice<TDev,Ndim>::PointsDevice(TDev& device, Dim<Ndim> dim,
                                                 int32_t n_points,
                                                 std::span<float> coordinates,
                                                 std::span<float> weights,
@@ -196,8 +196,8 @@ namespace clue {
         m_view, m_buffer.data(), n_points, coordinates, weights, output);
   }
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  inline PointsDevice<TDev,Ndim>::PointsDevice(TDev& device, Dim<Ndim> dim,
                                                 int32_t n_points,
                                                 float* input,
                                                 int* output)
@@ -208,9 +208,9 @@ namespace clue {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, input, output);
   }
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  inline PointsDevice<Ndim, TDev>::PointsDevice(
-      TDev& device, int32_t n_points, float* coordinates, float* weights, int* output)
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  inline PointsDevice<TDev,Ndim>::PointsDevice(
+      TDev& device,Dim<Ndim> dim, int32_t n_points, float* coordinates, float* weights, int* output)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
         m_device(device),
         m_view{},
@@ -219,10 +219,10 @@ namespace clue {
         m_view, m_buffer.data(), n_points, coordinates, weights, output);
   }
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
   template <concepts::Pointer... TBuffers>
   requires(sizeof...(TBuffers) == Ndim + 2 and
-           Ndim > 1) inline PointsDevice<Ndim, TDev>::PointsDevice(TDev& device,
+           Ndim > 1) inline PointsDevice<TDev,Ndim>::PointsDevice(TDev& device, Dim<Ndim> dim,
                                                                    int32_t n_points,
                                                                    TBuffers... buffers)
       : m_buffer{make_device_buffer<std::byte>(device, 3 * n_points * sizeof(float))},
@@ -232,35 +232,35 @@ namespace clue {
     soa::device::partitionSoAView<Ndim>(m_view, m_buffer.data(), n_points, buffers...);
   }
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  ALPAKA_FN_HOST inline auto PointsDevice<Ndim, TDev>::rho() const {
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  ALPAKA_FN_HOST inline auto PointsDevice<TDev,Ndim>::rho() const {
     return std::span<const float>(m_view.rho, m_size);
   }
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  ALPAKA_FN_HOST inline auto PointsDevice<Ndim, TDev>::rho() {
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  ALPAKA_FN_HOST inline auto PointsDevice<TDev,Ndim>::rho() {
     return std::span<float>(m_view.rho, m_size);
   }
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  ALPAKA_FN_HOST inline auto PointsDevice<Ndim, TDev>::nearestHigher() const {
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  ALPAKA_FN_HOST inline auto PointsDevice<TDev,Ndim>::nearestHigher() const {
     return std::span<const int>(m_view.nearest_higher, m_size);
   }
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  ALPAKA_FN_HOST inline auto PointsDevice<Ndim, TDev>::nearestHigher() {
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  ALPAKA_FN_HOST inline auto PointsDevice<TDev,Ndim>::nearestHigher() {
     return std::span<int>(m_view.nearest_higher, m_size);
   }
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  ALPAKA_FN_HOST inline auto PointsDevice<Ndim, TDev>::isSeed() const {
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  ALPAKA_FN_HOST inline auto PointsDevice<TDev,Ndim>::isSeed() const {
     return std::span<const int>(m_view.is_seed, m_size);
   }
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  ALPAKA_FN_HOST inline auto PointsDevice<Ndim, TDev>::isSeed() {
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  ALPAKA_FN_HOST inline auto PointsDevice<TDev,Ndim>::isSeed() {
     return std::span<int>(m_view.is_seed, m_size);
   }
 
-  template <std::size_t Ndim, alpaka::onHost::concepts::Device TDev>
-  ALPAKA_FN_HOST inline const auto& PointsDevice<Ndim, TDev>::n_clusters() {
+  template <alpaka::onHost::concepts::Device TDev,std::size_t Ndim>
+  ALPAKA_FN_HOST inline const auto& PointsDevice<TDev,Ndim>::n_clusters() {
     auto queue = get_queue(m_device);
 
     assert(m_clustered &&
