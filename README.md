@@ -1,3 +1,5 @@
+from CLUEstering import backends
+
 # CLUEstering — High-Performance Density-Based Weighted Clustering for Heterogeneous Computing
 
 
@@ -24,54 +26,57 @@ CLUE is also designed for parallel execution, scaling linearly with problem size
 To maximize hardware portability and performance, CLUEstering’s backend is implemented using [**alpaka 3**](https://github.com/alpaka-group/alpaka3),
 a high-efficiency abstraction library for performance portability across CPUs, GPUs, and other accelerators.
 
-## Installation
+## Configure/ Build
 ### C++ API
-TODO refactor installation requirements potentially add cmake presets
-CLUEstering can be installed via **CMake**. It requires a C++20 compliant compiler and CMake 3.16 or higher.
+CLUEstering can be configured via **CMake**. It requires a C++20 compliant compiler and CMake 3.16 or higher.
 To install CLUEstering globally on your system, first clone the repository or download on the the release
-tarballs from the [archive](https://github.com/cms-patatrack/CLUEstering/releases), then install with the following commands:
+For the alpaka3 port installation is currently discouraged. 
+To build from source (using working tree) use:
 ```shell
 cd <CLUEstering-folder> && mkdir build
-cmake -B build -DCMAKE_INSTALL_PREFIX=/desired/installation/path
-cmake --install build
+cmake ..
 ```
-where the installation step may require sudo privileges depending on the chosen installation path.
-Then you can link CLUEstering to your project using CMake's `find_package`:
+To build your own targets: 
 ```CMake
 find_package(CLUEstering REQUIRED)
 add_executable(your_target your_source.cpp)
 target_link_libraries(your_target PRIVATE CLUEstering::CLUEstering)
 ```
+You can also take a look in the `example\` folders CMakeLists.txt and use:
+```CMake
+add_alpaka_executor_binaries(
+        PREFIX yourPrefix
+        SOURCES yourSourcesList
+        LINK_LIBS CLUEstering::CLUEstering
+        OUT_TARGETS created_binaries
+)
+```
+Which is a fitting choice in scenarios, where you want to be able to generate multiple targets (see section **Heterogeneous backends support**).
 
-### Python API
-### From PyPi
-CLUEstering is available on the PyPi repository, and can be easily installed with:
-```shell
-pip install -v CLUEstering
-```
-### From source
-CLUEstering can also be compiled and installed from source. To do so, first clone the repository
-recursively or download one of the release tarballs from [archive](https://github.com/cms-patatrack/CLUEstering/releases).  
-Then, inside the root directory install it using pip:
-```shell
-pip install -v .
-```
-where the `-v` flag is optional but suggested because provides more details during the compilation process.
-This will automatically fetch the build dependencies and compile all the supported backends.
+## Python API
+**TODO**: add re-add install
+### Python Bindings
+When compiling with `BUILD_PYTHON=ON` you can create build python bindings for multiple backends 
+, where backend selection depends on the alpaka cmake options.
+
 
 ## Heterogeneous backends support
 CLUEstering leverages the **alpaka** library to provide support for multiple backends without any code duplications.  
+When this library is linked to any target the first valid backend + executor will be selected via the usual alpaka3 cmake options 
+(most reliable) [alpaka documentation](https://github.com/alpaka-group/alpaka3).
+
+When compiling examples using `CLUE_Examples=ON` or enabling python bindings `BUILD_PYTHON=ON` 
+multiple targets/bindings will be generated (one for each backend) if more than one of the following cmake options are enabled.
+
 The table below lists the currently supported backends and the corresponding CMake flags to enable them:
 | Backend        | CMake Flag           |
 |----------------|----------------------|
-| Serial         | `-- enabled by default --` |
+| Serial         | `-- alpaka_EXEC_CpuSerial --` |
 | OpenMP         | `ALPAKA_DEP_OMP` |
 | TBB            | `ALPAKA_DEP_TBB`  |
 | CUDA           | `ALPAKA_DEP_CUDA` |
 | HIP            | `ALPAKA_DEP_HIP` |  
 
-Note: This is currently only supported for 
-For the list of supported compiler versions for each backend, please refer to the
 
 [alpaka documentation](https://github.com/alpaka-group/alpaka3).
 
@@ -86,13 +91,14 @@ int main() {
   // Obtain the queue, which is used for allocations and kernel launches.
   // its recommended to use a blocking queue for now
   auto queue = clue::get_queue(0u, alpaka::queueKind::blocking);
-
-  // Allocate the points on the host
-  clue::PointsHost<2> points = clue::read_csv<2>("data.csv");
+  // specify the dimension of the points that will be used during clustering
+  auto dim = clue::Dim<2>{};
+  // Allocate points if the given dimension on the host
+  clue::PointsHost points = clue::read_csv(dim, "data.csv");
 
   // Define the parameters for the clustering and construct the clusterer.
   const float distance = 20.f, density_cutoff = 10.f;
-  clue::Clusterer<ALPAKA_TYPEOF(queue), 2> algo(queue, dc, density_cutoff);
+  clue::Clusterer algo(queue, dim, dc, density_cutoff);
 
   // Launch the clustering
   // The results will be stored in the `clue::PointsHost` object
@@ -104,14 +110,15 @@ int main() {
 This example reads a set of 2D points from a CSV file, performs clustering using CLUE, and retrieves the cluster assignments for each point.
 For more detailed examples and usage instructions, please refer to the [documentation](https://cms-patatrack.github.io/CLUEstering/).
 ### Python API
-TODO for alpaka 3 port (python bindings are not ported yet)
 Here is a basic example of how to use CLUEstering in Python:
 ```python
 import CLUEstering as clue
 
+## select any backend from the list of availabl backends
+backend=clue.all_backends()[0] 
 clusterer = clue.clusterer(1., 5.)
 clusterer.read_data(data)
-clusterer.run_clue()
+clusterer.run_clue(backend=backend)
 clusterer.cluster_plotter()
 clusterer.to_csv('output_folder', 'data_results.csv')
 ```
