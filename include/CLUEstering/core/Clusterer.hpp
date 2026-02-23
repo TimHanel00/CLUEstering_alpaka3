@@ -193,7 +193,7 @@ namespace clue {
     /// @return An device associator mapping clusters and points
     auto getClusters(TQueue& queue, const TPointsDevice& d_points);
   };
-  // provided a deduction guid mainly clang/hip toolchain struggles with CTAD for the clusterer
+  // provided a deduction guide mainly clang/hip toolchain struggles with CTAD for the clusterer
   // deduction guide
   template <concepts::Queue Q, std::size_t N>
   Clusterer(
@@ -206,16 +206,16 @@ namespace clue {
       int
   ) -> Clusterer<std::remove_cvref_t<Q>, N>;
   // deduction guide (constref Dimension)
-  template <concepts::Queue Q, std::size_t N>
-  Clusterer(
-      Q&,
-      Dim<N> const&,
-      float,
-      float,
-      std::optional<float>,
-      std::optional<float>,
-      int
-  ) -> Clusterer<std::remove_cvref_t<Q>, N>;
+  // template <concepts::Queue Q, std::size_t N>
+  // Clusterer(
+  //     Q&,
+  //     Dim<N> const&,
+  //     float,
+  //     float,
+  //     std::optional<float>,
+  //     std::optional<float>,
+  //     int
+  // ) -> Clusterer<std::remove_cvref_t<Q>, N>;
 }  // namespace clue
 
 #include "CLUEstering/core/detail/Clusterer.hpp"

@@ -60,16 +60,17 @@ int main(int argc, char* argv[]) {
   // Obtain the queue, which is used for allocations and kernel launches.
   auto queue = clue::get_queue(0U, alpaka::queueKind::blocking);
   auto device = queue.getDevice();
+  // specify the dimension of the points that will be used during clustering
+  auto dim = clue::Dim<2>{};
   // Allocate the points on the host and device.
-  clue::PointsHost<2> h_points = clue::read_csv<2>(csv_path);
-  // specify the dimension in a CVec-wrapper to enable CTAD
-  auto dim=::clue::Dim<std::size_t, 2>{};
+  clue::PointsHost h_points = read_csv(dim,csv_path);
+
   auto d_points = clue::PointsDevice{device,dim, h_points.size()};
 
   // Define the parameters for the clustering
   const float dc = 20.f, rhoc = 10.f, outlier = 20.f;
 
-  clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
+  clue::Clusterer algo(queue,dim, dc, rhoc, outlier);
 
   // Launch the clustering
   algo.make_clusters(queue, h_points, d_points);

@@ -42,20 +42,52 @@ set_target_properties(CLUE_Convolutional_Kernels
         ${PROJECT_SOURCE_DIR}/CLUEstering/lib
 )
 alpaka_finalize(CLUE_Convolutional_Kernels)
-if(alpaka_EXEC_CpuSerial)
-  add_subdirectory(serial)
-endif()
-if(alpaka_DEP_TBB)
-  add_subdirectory(tbb)
-endif()
-if(alpaka_DEP_OMP)
-  add_subdirectory(openmp)
-endif()
-if(alpaka_DEP_CUDA)
-  add_subdirectory(cuda)
+
+# --- CUDA detection ---
+find_program(NVCC_EXECUTABLE nvcc)
+set(cuda_found FALSE)
+if(NVCC_EXECUTABLE)
+  set(cuda_found TRUE)
 endif()
 
-# GPU HIP
-if(alpaka_DEP_HIP)
-  add_subdirectory(hip)
+# --- HIP detection (simple: hipcc on PATH) ---
+find_program(HIPCC_EXECUTABLE hipcc HINTS /opt/rocm/bin)
+set(hip_found FALSE)
+if(HIPCC_EXECUTABLE)
+  set(hip_found TRUE)
 endif()
+
+# --- Optional deps ---
+find_package(TBB QUIET)
+find_package(OpenMP QUIET)
+
+## FORCE Alpaka executor toggles (overwrite prior state)
+#set(alpaka_EXEC_CpuSerial ON CACHE BOOL "" FORCE)
+#
+## Add subdirs based on detection
+#add_subdirectory(serial)
+#set(alpaka_EXEC_CpuSerial OFF CACHE BOOL "" FORCE)
+#if(TBB_FOUND)
+#  set(alpaka_DEP_TBB ${TBB_FOUND} CACHE BOOL "" FORCE)
+#  add_subdirectory(tbb)
+#  set(alpaka_DEP_TBB OFF CACHE BOOL "" FORCE)
+#
+#endif()
+
+#if(OpenMP_CXX_FOUND)
+#  set(alpaka_DEP_OMP ${OpenMP_CXX_FOUND} CACHE BOOL "" FORCE)
+#  add_subdirectory(openmp)
+#  set(alpaka_DEP_OMP OFF CACHE BOOL "" FORCE)
+#endif()
+#
+if(cuda_found)
+  set(alpaka_DEP_CUDA ${cuda_found} CACHE BOOL "" FORCE)
+  add_subdirectory(cuda)
+  set(alpaka_DEP_CUDA OFF CACHE BOOL "" FORCE)
+endif()
+#
+#if(hip_found)
+#  set(alpaka_DEP_HIP ${hip_found} CACHE BOOL "" FORCE)
+#  add_subdirectory(hip)
+#  set(alpaka_DEP_HIP OFF CACHE BOOL "" FORCE)
+#endif()

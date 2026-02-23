@@ -16,15 +16,16 @@ Below is a simple C++ code snippet, which can also be found, along with the CMak
         // Obtain the queue, which is used for allocations and kernel launches.
         auto queue = clue::get_queue(0u);
         auto device = queue.getDevice();
-        // Allocate the points on the host and device.
-        clue::PointsHost<2> h_points = clue::read_csv<2>("path-to-data.csv");
-        // specify the dimension for type deduction
+        // specify the dimension of the points that will be used for clustering
         auto dim=clue::Dim<std::size_t,2>;
+        // Allocate the points on the host and device.
+        clue::PointsHost<2> h_points = clue::read_csv(dim, "path-to-data.csv");
+
         clue::PointsDevice d_points(device, dim, h_points.size());
     
         // Define the parameters for the clustering and construct the clusterer.
         const float dc = 20.f, rhoc = 10.f, outlier = 20.f;
-        clue::Clusterer<ALPAKA_TYPEOF(queue),2> algo(queue, dc, rhoc, outlier);
+        clue::Clusterer algo(queue, dim, dc, rhoc, outlier);
     
         // Launch the clustering
         // The results will be stored in the `clue::PointsHost` object
