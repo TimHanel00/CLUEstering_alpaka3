@@ -1,24 +1,16 @@
-enable_language(CUDA)
-set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CUDA_COMPILER})
 
-# set the CUDA standard
-if(NOT DEFINED CMAKE_CUDA_STANDARD)
-  set(CMAKE_CUDA_STANDARD 20)
-  set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-endif()
-
-set_source_files_properties(binding_gpu_cuda.cpp PROPERTIES LANGUAGE CUDA)
 pybind11_add_module(CLUE_GPU_CUDA SHARED binding_gpu_cuda.cpp)
-target_link_libraries(CLUE_GPU_CUDA PUBLIC CLUEstering::CLUEstering)
+target_compile_definitions(CLUE_GPU_CUDA PRIVATE alpaka_SELECT_CUDA)
 target_include_directories(CLUE_GPU_CUDA
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
-target_compile_definitions(CLUE_GPU_CUDA PRIVATE alpaka_SELECT_CUDA)
-target_compile_options(CLUE_GPU_CUDA PRIVATE --expt-relaxed-constexpr)
+target_link_libraries(CLUE_GPU_CUDA PUBLIC CLUEstering::CLUEstering)
+
 set_target_properties(CLUE_GPU_CUDA
         PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY
         ${PROJECT_SOURCE_DIR}/CLUEstering/lib
 )
+
 alpaka_finalize(CLUE_GPU_CUDA)

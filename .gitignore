@@ -23,7 +23,7 @@ vgcore.*
 *_output.csv
 *_passed.py
 *test_sissa_import.csv
-
+CLUEstering/lib/*
 # Documentation
 docs/html
 docs/latex

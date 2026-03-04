@@ -1,16 +1,87 @@
 cmake_minimum_required(VERSION 3.16.0)
+project(CLUEstering VERSION 2.9.0)
 
-project(
-  CLUEstering
-  LANGUAGES CXX
-  VERSION 2.9.0)
+option(BUILD_PYTHON "Build the Python bindings" OFF)
+if(BUILD_PYTHON)
+  # -----------------------
+  # Detect CUDA
+  # -----------------------
+  set(CLUE_HAVE_CUDA OFF)
+  if(DEFINED ENV{CUDACXX} AND EXISTS "$ENV{CUDACXX}")
+    set(CLUE_HAVE_CUDA ON)
+    set(alpaka_DEP_CUDA ON CACHE BOOL "Enable Alpaka CUDA backend" FORCE)
+  else()
+    find_program(NVCC_EXECUTABLE nvcc)
+    if(NVCC_EXECUTABLE)
+      set(CLUE_HAVE_CUDA ON)
+      set(alpaka_DEP_CUDA ON CACHE BOOL "Enable Alpaka CUDA backend" FORCE)
+    endif()
+  endif()
+  if(NOT CLUE_HAVE_CUDA)
+    set(alpaka_DEP_CUDA OFF CACHE BOOL "Enable Alpaka CUDA backend" FORCE)
+  endif()
+
+  # -----------------------
+  # Detect HIP
+  # -----------------------
+  set(CLUE_HAVE_HIP OFF)
+  if(DEFINED ENV{HIPCXX} AND EXISTS "$ENV{HIPCXX}")
+    set(CLUE_HAVE_HIP ON)
+    set(alpaka_DEP_HIP ON CACHE BOOL "Enable Alpaka HIP backend" FORCE)
+  else()
+    find_program(HIPCC_EXECUTABLE hipcc)
+    if(HIPCC_EXECUTABLE)
+      set(CLUE_HAVE_HIP ON)
+      set(alpaka_DEP_HIP ON CACHE BOOL "Enable Alpaka HIP backend" FORCE)
+    elseif(DEFINED ENV{ROCM_PATH} AND IS_DIRECTORY "$ENV{ROCM_PATH}")
+      set(CLUE_HAVE_HIP ON)
+      set(alpaka_DEP_HIP ON CACHE BOOL "Enable Alpaka HIP backend" FORCE)
+    endif()
+  endif()
+  if(NOT CLUE_HAVE_HIP)
+    set(alpaka_DEP_HIP OFF CACHE BOOL "Enable Alpaka HIP backend" FORCE)
+  endif()
+
+  # -----------------------
+  # Detect OpenMP
+  # -----------------------
+  set(CLUE_HAVE_OMP OFF)
+  find_package(OpenMP QUIET)
+  if(OpenMP_CXX_FOUND)
+    set(CLUE_HAVE_OMP ON)
+    set(alpaka_DEP_OMP ON CACHE BOOL "Enable Alpaka OpenMP backend" FORCE)
+  endif()
+  if(NOT CLUE_HAVE_OMP)
+    set(alpaka_DEP_OMP OFF CACHE BOOL "Enable Alpaka OpenMP backend" FORCE)
+  endif()
+
+  # -----------------------
+  # Detect TBB (oneTBB or classic)
+  # -----------------------
+  set(CLUE_HAVE_TBB OFF)
+  find_package(TBB QUIET)
+  if(TBB_FOUND)
+    set(CLUE_HAVE_TBB ON)
+    set(alpaka_DEP_TBB ON CACHE BOOL "Enable Alpaka TBB backend" FORCE)
+  else()
+    find_package(oneTBB QUIET)
+    if(oneTBB_FOUND)
+      set(CLUE_HAVE_TBB ON)
+      set(alpaka_DEP_TBB ON CACHE BOOL "Enable Alpaka TBB backend" FORCE)
+    endif()
+  endif()
+  if(NOT CLUE_HAVE_TBB)
+    set(alpaka_DEP_TBB OFF CACHE BOOL "Enable Alpaka TBB backend" FORCE)
+  endif()
+
+endif ()
 find_package(alpaka CONFIG)
 if(NOT alpaka_FOUND)
   include(FetchContent)
   FetchContent_Declare(
           alpaka
           GIT_REPOSITORY https://github.com/alpaka-group/alpaka3.git
-          GIT_TAG 2d731a38e21aa544c8011306e581f844754187aa
+          GIT_TAG 19d52e882784829927f445ce12e546f948121693
   )
   FetchContent_MakeAvailable(alpaka)
 
@@ -82,7 +153,7 @@ if(NOT TARGET CLUEstering::CLUEstering)
               "${CMAKE_CURRENT_BINARY_DIR}/CLUEsteringConfigVersion.cmake"
         DESTINATION lib/cmake/CLUEstering)
 endif ()
-option(BUILD_PYTHON "Build the Python bindings" OFF)
+
 if(BUILD_PYTHON)
   if(NOT EXISTS "${CMAKE_SOURCE_DIR}/extern/pybind11/CMakeLists.txt")
     message(FATAL_ERROR

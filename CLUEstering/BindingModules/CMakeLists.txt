@@ -61,33 +61,20 @@ endif()
 find_package(TBB QUIET)
 find_package(OpenMP QUIET)
 
-## FORCE Alpaka executor toggles (overwrite prior state)
-#set(alpaka_EXEC_CpuSerial ON CACHE BOOL "" FORCE)
-#
-## Add subdirs based on detection
-#add_subdirectory(serial)
-#set(alpaka_EXEC_CpuSerial OFF CACHE BOOL "" FORCE)
-#if(TBB_FOUND)
-#  set(alpaka_DEP_TBB ${TBB_FOUND} CACHE BOOL "" FORCE)
-#  add_subdirectory(tbb)
-#  set(alpaka_DEP_TBB OFF CACHE BOOL "" FORCE)
-#
-#endif()
 
-#if(OpenMP_CXX_FOUND)
-#  set(alpaka_DEP_OMP ${OpenMP_CXX_FOUND} CACHE BOOL "" FORCE)
-#  add_subdirectory(openmp)
-#  set(alpaka_DEP_OMP OFF CACHE BOOL "" FORCE)
-#endif()
-#
-if(cuda_found)
-  set(alpaka_DEP_CUDA ${cuda_found} CACHE BOOL "" FORCE)
-  add_subdirectory(cuda)
-  set(alpaka_DEP_CUDA OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(serial)
+if(CLUE_HAVE_TBB)
+  add_subdirectory(tbb)
 endif()
-#
-#if(hip_found)
-#  set(alpaka_DEP_HIP ${hip_found} CACHE BOOL "" FORCE)
-#  add_subdirectory(hip)
-#  set(alpaka_DEP_HIP OFF CACHE BOOL "" FORCE)
-#endif()
+if(CLUE_HAVE_OMP)
+  add_subdirectory(openmp)
+endif()
+
+if(CLUE_HAVE_CUDA)
+  add_subdirectory(cuda)
+endif()
+
+if(CLUE_HAVE_HIP)
+  add_subdirectory(hip)
+endif()
